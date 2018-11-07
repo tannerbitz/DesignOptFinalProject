@@ -3,13 +3,13 @@ classdef RaceTrack < handle
         controlPoints  % racetrack control points loaded from file
         progress       % race track progress varibale
         arcLen         % race track arc length corresponding to progress variable
-        x              % x coordinate corresponding to progress variable
-        y              % y coordinate correspinding to progress variable
+        X              % x coordinate corresponding to progress variable
+        Y              % y coordinate correspinding to progress variable
         width          % track width
-        xout
-        yout
-        xin
-        yin
+        Xout           % outer edge x coordinate
+        Yout           % outer edge y coordinate
+        Xin            % inner edge x coordinate
+        Yin            % inner edge y coordinate
         
     end
     
@@ -54,38 +54,38 @@ classdef RaceTrack < handle
             arcLenMin = min(arcLen1);
             arcLenMax = max(arcLen1);
             obj.arcLen = linspace(arcLenMin,arcLenMax,N);
-            obj.x = interp1(arcLen1,p_spl(:,1),obj.arcLen);
-            obj.y = interp1(arcLen1,p_spl(:,2),obj.arcLen);
+            obj.X = interp1(arcLen1,p_spl(:,1),obj.arcLen);
+            obj.Y = interp1(arcLen1,p_spl(:,2),obj.arcLen);
             
             
             
             figure
-            plot(obj.x,obj.y, 'k--')
+            plot(obj.X,obj.Y, 'k--')
             hold on
             axis equal;
             
             % compute track edge locations
             for i = 1:N
                 if i == 1
-                    nVec(i,:) = [-(obj.y(i+1)-obj.y(N-2)), (obj.x(i+1)-obj.x(N-2))];
+                    nVec(i,:) = [-(obj.Y(i+1)-obj.Y(N-2)), (obj.X(i+1)-obj.X(N-2))];
                     nVec(i,:) = nVec(i,:)/norm(nVec(i,:));
                 elseif i == N
-                    nVec(i,:) = [-(obj.y(2)-obj.y(i-1)), (obj.x(2)-obj.x(i-1))];
+                    nVec(i,:) = [-(obj.Y(2)-obj.Y(i-1)), (obj.X(2)-obj.X(i-1))];
                     nVec(i,:) = nVec(i,:)/norm(nVec(i,:));
                 else
-                    nVec(i,:) = [-(obj.y(i+1)-obj.y(i-1)), (obj.x(i+1)-obj.x(i-1))];
+                    nVec(i,:) = [-(obj.Y(i+1)-obj.Y(i-1)), (obj.X(i+1)-obj.X(i-1))];
                     nVec(i,:) = nVec(i,:)/norm(nVec(i,:));
                 end
                 
-                obj.xout(i) = obj.x(i) - nVec(i,1)*obj.width;
-                obj.yout(i) = obj.y(i) - nVec(i,2)*obj.width;
+                obj.Xout(i) = obj.X(i) - nVec(i,1)*obj.width;
+                obj.Yout(i) = obj.Y(i) - nVec(i,2)*obj.width;
                 
-                obj.xin(i) = obj.x(i) + nVec(i,1)*obj.width;
-                obj.yin(i) = obj.y(i) + nVec(i,2)*obj.width;
+                obj.Xin(i) = obj.X(i) + nVec(i,1)*obj.width;
+                obj.Yin(i) = obj.Y(i) + nVec(i,2)*obj.width;
                 
             end
             
-            plot(obj.xin,obj.yin, 'r-', obj.xout,obj.yout ,'r-');
+            plot(obj.Xin,obj.Yin, 'r-', obj.Xout,obj.Yout ,'r-');
             
         end
         
