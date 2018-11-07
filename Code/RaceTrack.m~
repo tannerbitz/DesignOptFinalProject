@@ -1,4 +1,4 @@
-classdef RaceTrack < handle
+classdef RaceTrack
     properties
         controlPoints  % racetrack control points loaded from file
         progress       % race track progress varibale
@@ -8,7 +8,7 @@ classdef RaceTrack < handle
         width          % track width
         xout
         yout
-        xin
+        xin 
         yin
         
     end
@@ -18,9 +18,9 @@ classdef RaceTrack < handle
         function obj = RaceTrack(inputFile,width_in)
             obj.width = width_in;
             obj.controlPoints = importdata(inputFile);
-            
+            obj.computeRaceTrack();
         end
-        
+         
         function obj = computeRaceTrack(obj)
             order = 3; % cubic polynomial
             n =  size(obj.controlPoints,1); % number of control points
@@ -35,11 +35,11 @@ classdef RaceTrack < handle
             
             n = size(p,1); % fix number of control points
             
-            N = 10000;
             T = linspace(0,1,n-order+2);
-            yt = linspace(1/(n-2),1-1/(n-2),N); % ignore first and last (1/n-2) values of yt, this starts and ends the track where it smoothly meets
+            yt = linspace(1/(n-2),1-1/(n-2),1000); % ignore first and last (1/n-2) values of yt, this starts and ends the track where it smoothly meets
             p_spl = obj.DEBOOR(T,p,yt,order);  % compute coordinates of b-spline track
-            
+            %plot(p_spl(:,1),p_spl(:,2),'b.-','LineWidth',1);
+           
             
             % compute length of each linear segment of track
             arcLen1 = zeros(size(p_spl,1),1);
@@ -60,22 +60,14 @@ classdef RaceTrack < handle
             
             
             figure
-            plot(obj.x,obj.y, 'k--')
+            plot(obj.x,obj.y, '.-')
             hold on
             axis equal;
             
             % compute track edge locations
-            for i = 1:N
-                if i == 1
-                    nVec(i,:) = [-(obj.y(i+1)-obj.y(N-2)), (obj.x(i+1)-obj.x(N-2))];
-                    nVec(i,:) = nVec(i,:)/norm(nVec(i,:));
-                elseif i == N
-                    nVec(i,:) = [-(obj.y(2)-obj.y(i-1)), (obj.x(2)-obj.x(i-1))];
-                    nVec(i,:) = nVec(i,:)/norm(nVec(i,:));
-                else
-                    nVec(i,:) = [-(obj.y(i+1)-obj.y(i-1)), (obj.x(i+1)-obj.x(i-1))];
-                    nVec(i,:) = nVec(i,:)/norm(nVec(i,:));
-                end
+            for i = 2:N-1
+                nVec(i,:) = [-(obj.y(i+1)-obj.y(i-1)), (obj.x(i+1)-obj.x(i-1))];
+                nVec(i,:) = nVec(i,:)/norm(nVec(i,:));
                 
                 obj.xout(i) = obj.x(i) - nVec(i,1)*obj.width;
                 obj.yout(i) = obj.y(i) - nVec(i,2)*obj.width;
@@ -85,7 +77,7 @@ classdef RaceTrack < handle
                 
             end
             
-            plot(obj.xin,obj.yin, 'r-', obj.xout,obj.yout ,'r-');
+            plot(obj.xin(2:N-1),obj.yin(2:N-1), '-', obj.xout(2:N-1),yout(2:N-1)); 
             
         end
         
