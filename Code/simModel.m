@@ -25,7 +25,7 @@ classdef simModel < handle
    
    methods
        
-       function [U_dot] = getRHS(obj,control)
+       function [U_dot] = getRHS(obj,control, Fx,Fy)
            T = control(1);      % commanded wheel torque
            delta = control(2);  % commanded steering angle  (radians)
            
