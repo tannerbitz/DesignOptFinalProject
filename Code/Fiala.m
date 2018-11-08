@@ -68,7 +68,7 @@ classdef Fiala < handle
             if thetaPoly < 1 %not sliding
                 Ft = obj.mu*fzTemp*thetaPoly;
             else
-                Ft = fzTemp;
+                Ft = obj.mu*fzTemp;
             end
             
             % Calculate lat and long tire forces
