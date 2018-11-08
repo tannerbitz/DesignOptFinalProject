@@ -1,7 +1,7 @@
 classdef RaceTrack < handle
     properties
         controlPoints  % racetrack control points loaded from file
-        progress       % race track progress varibale
+        progress       % race track progress variable
         arcLen         % race track arc length corresponding to progress variable
         X              % x coordinate corresponding to progress variable
         Y              % y coordinate correspinding to progress variable

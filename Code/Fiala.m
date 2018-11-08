@@ -51,13 +51,13 @@ classdef Fiala < handle
             
             % Calculate sigmaLat/ sigmaLong/ sigma
             if strcmp(accelBrakeFlag, 'accel')
-                sigmaLat = (obj.radiusWheel*vObjTemp.omegaW - vObjTemp.vx)/(obj.radiusWheel*vObjTemp.omegaW);
+                sigmaLong = (obj.radiusWheel*vObjTemp.omegaW - vObjTemp.vx)/(obj.radiusWheel*vObjTemp.omegaW);
             elseif strcmp(accelBrakeFlag, 'brake')
-                sigmaLat = (obj.radiusWheel*vObjTemp.omegaW - vObjTemp.vx)/(vObjTemp.vx);
+                sigmaLong = (obj.radiusWheel*vObjTemp.omegaW - vObjTemp.vx)/(vObjTemp.vx);
             end
             
             
-            sigmaLong = vObjTemp.vx/(obj.radiusWheel*vObjTemp.omegaW)*tan(vObjTemp.alpha);
+            sigmaLat = vObjTemp.vx/(obj.radiusWheel*vObjTemp.omegaW)*tan(vObjTemp.alpha);
             sigma = sqrt(sigmaLat^2 + sigmaLong^2);
             
             % Calculate theta
@@ -68,7 +68,7 @@ classdef Fiala < handle
             if thetaPoly < 1 %not sliding
                 Ft = obj.mu*fzTemp*thetaPoly;
             else
-                Ft = fzTemp;
+                Ft = obj.mu*fzTemp;
             end
             
             % Calculate lat and long tire forces
