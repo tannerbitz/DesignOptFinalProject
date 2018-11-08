@@ -4,3 +4,4 @@ width = .1;
 rt = RaceTrack(inputFile,width);
 
 rt.computeRaceTrack();
+
