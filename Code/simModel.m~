@@ -9,48 +9,93 @@ classdef simModel < handle
       wr        % wheel radius
       maxT      % maximum wheel torque
       
-      % vehicle states - U
+      % vehicle states - States
       X         % global X coordinate
       Y         % global Y coordinate
       phi       % vehicle heading relative to global X axis  [rad]
       vx        % body x velocity
       vy        % body y velocity
-      wb        % body rotation rate
-      ww_fl     % front left wheel rotation rate
-      ww_fr     % front right wheel rotation rate
-      ww_rl     % front left wheel rotation rate
-      ww_rr     % front right wheel rotation rate
+      omegaB    % body rotation rate
+      omegaW_fl % front left wheel rotation rate
+      omegaW_fr % front right wheel rotation rate
+      omegaW_rl % front left wheel rotation rate
+      omegaW_rr % front right wheel rotation rate
+      
+      Fx_old    % total force on vehicle from previous interation
+      Fy_old    
       
    end
    
    methods
        
-       function [U_dot] = getRHS(obj,control)
+       function [States_dot] = getRHS(obj,control)
            T = control(1);      % commanded wheel torque
-           delta = control(2);  % commanded sterring angle  (radians)
+           delta = control(2);  % commanded steering angle  (radians)
            
+           % compute 
            lf = obj.dm*obj.length;
            lr = (1-obj.dm)*obj.length;
            
+           Ffl_z = .5*obj.mass*9.81*obj.dm - obj.Fx*obj.hcg/obj.length - obj.Fx*obj.hcg/obj.width;
+           Ffr_z = .5*obj.mass*9.81*obj.dm - obj.Fx*obj.hcg/obj.length + obj.Fx*obj.hcg/obj.width;
+           Frl_z = .5*obj.mass*9.81*(1-obj.dm) + obj.Fx*obj.hcg/obj.length - obj.Fx*obj.hcg/obj.width;
+           Frr_z = .5*obj.mass*9.81*(1-obj.dm) + obj.Fx*obj.hcg/obj.length + obj.Fx*obj.hcg/obj.width;
+           
+           
+           
            X_dot = obj.vx*cos(obj.phi) - obj.vy*sin(obj.phi);
            Y_dot = obj.vx*sin(obj.phi) + obj.vy*cos(obj.phi);
-           phi_dot = obj.wb;
+           phi_dot = obj.omegaB;
            vx_dot  = 1/obj.mass*(Frl_long + Frr_long - Ffl_lat*sin(delta) - Ffr_lat*sin(delta) ...
-               + Ffl_long*cos(delta) + Ffr_long*cos(delta) - obj.mass*obj.vy*obj.wb);
+               + Ffl_long*cos(delta) + Ffr_long*cos(delta) - obj.mass*obj.vy*obj.omegaB);
            vy_dot  = 1/obj.mass*(Frl_lat + Frr_lat + Ffl_lat*sin(delta) + Ffr_lat*sin(delta) ...
-               + Ffl_long*cos(delta) + Ffr_long*cos(delta) - obj.mass*obj.vy*obj.wb);
-           wb_dot = 1/obj.Iz*(Ffl_lat*lf*cos(delta) + Ffr_lat*lf*cos(delta) ...
+               + Ffl_long*cos(delta) + Ffr_long*cos(delta) - obj.mass*obj.vy*obj.omegaB);
+           omegaB_dot = 1/obj.Iz*(Ffl_lat*lf*cos(delta) + Ffr_lat*lf*cos(delta) ...
                - Frl_lat*lr - Frr_lat*lr + (-Ffl_long - Frl_long ...
                + Ffr_long + Frr_long) * obj.width/2);
-           ww_fl_dot = T - obj.wr*Ffl_long;
-           ww_fr_dot = T - obj.wr*Ffr_long;
-           ww_fr_dot = T - obj.wr*Frl_long;
-           ww_rr_dot = T - obj.wr*Frr_long;
+           omegaW_fl_dot = T - obj.wr * Ffl_long;
+           omegaW_fr_dot = T - obj.wr * Ffr_long;
+           omegaW_rl_dot = T - obj.wr * Frl_long;
+           omegaW_rr_dot = T - obj.wr * Frr_long;
            
-           
-           
+           States_dot = [X_dot; Y_dot; phi_dot; vx_dot; vy_dot; omegaB_dot; omegaW_fl_dot; omegaW_fr_dot; omegaW_rl_dot; omegaW_rr_dot];
            
        end
+       
+      function  [fLong, fLat] = getTireForces(obj, omegaW, Fz, accelBrakeFlag)
+            %getTireForces calculates and returns the latitudinal and
+            %longitudinal forces on a wheel. The inputs are the normal
+            %force on the tire, Fz, and a flag that specifies whether the
+            %car is accelerating or braking. 
+            
+            
+            % Calculate sigmaLat/ sigmaLong/ sigma
+            if strcmp(accelBrakeFlag, 'accel')
+                sigmaLat = (obj.wr*omegaW - obj.vx)/(obj.wr*obj.omegaW);
+            elseif strcmp(accelBrakeFlag, 'brake')
+                sigmaLat = (obj.wr*omegaW - obj.vx)/(obj.vx);
+            end
+            
+            
+            sigmaLong = obj.vx/(obj.radiusWheel*obj.omegaW)*tan(obj.alpha);
+            sigma = sqrt(sigmaLat^2 + sigmaLong^2);
+            
+            % Calculate theta
+            theta = obj.C/(3*obj.mu*fzTemp);
+            
+            % Determine if tire is sliding/ total force
+            thetaPoly = 3*theta*sigma - 3*(theta*sigma)^2 + (theta*sigma)^3;
+            if thetaPoly < 1 %not sliding
+                Ft = obj.mu*fzTemp*thetaPoly;
+            else
+                Ft = fzTemp;
+            end
+            
+            % Calculate lat and long tire forces
+            fLong = sigmaLong/sigma*Ft;
+            fLat = sigmaLat/sigma*Ft;
+            
+        end
        
        
    end
