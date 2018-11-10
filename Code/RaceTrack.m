@@ -77,11 +77,11 @@ classdef RaceTrack < handle
                     nVec(i,:) = nVec(i,:)/norm(nVec(i,:));
                 end
                 
-                obj.Xout(i) = obj.X(i) - nVec(i,1)*obj.width;
-                obj.Yout(i) = obj.Y(i) - nVec(i,2)*obj.width;
+                obj.Xout(i) = obj.X(i) - nVec(i,1)*obj.width/2;
+                obj.Yout(i) = obj.Y(i) - nVec(i,2)*obj.width/2;
                 
-                obj.Xin(i) = obj.X(i) + nVec(i,1)*obj.width;
-                obj.Yin(i) = obj.Y(i) + nVec(i,2)*obj.width;
+                obj.Xin(i) = obj.X(i) + nVec(i,1)*obj.width/2;
+                obj.Yin(i) = obj.Y(i) + nVec(i,2)*obj.width/2;
                 
             end
             
