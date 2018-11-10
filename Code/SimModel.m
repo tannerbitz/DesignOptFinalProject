@@ -11,10 +11,6 @@ classdef SimModel < handle
       mu        % road/tire friction coefficient
       C         % tire stiffness
       
-      % control states
-      T 
-      delta
-      
       % vehicle states - States
       X         % global X coordinate
       Y         % global Y coordinate
@@ -34,7 +30,7 @@ classdef SimModel < handle
    
    methods
        
-       function SimModel()
+       function obj = SimModel(obj)
            
        end
        
@@ -42,14 +38,14 @@ classdef SimModel < handle
        function update(obj,deltaT)
            % update vehicle states using ODE45
            
-           States = [obj.X, obj.Y, obj.phi, obj.vx, obj.vy, obj.omegaB, obj.omegaW_fl, obj.omegaW_fr, obj.omegaW_rl, obj.omegaW_rr]';
+           States0 = [obj.X, obj.Y, obj.phi, obj.vx, obj.vy, obj.omegaB, obj.omegaW_fl, obj.omegaW_fr, obj.omegaW_rl, obj.omegaW_rr]';
            
-           [~,newStates] = ode45(@obj.calcRHS,[0 deltaT], States);
+           [~,newStates] = ode45(@(t,States) obj.calcRHS(t,States, delta,Torque), [0 deltaT], States0);
         
            [obj.X, obj.Y, obj.phi, obj.vx, obj.vy, obj.omegaB, obj.omegaW_fl, obj.omegaW_fr, obj.omegaW_rl, obj.omegaW_rr] = newStates(end,:) ;
        end
        
-       function [States_dot] = calcRHS(obj,~,States)
+       function [States_dot] = calcRHS(obj,~,States, delta, torque)
            
            X_in = States(1);
            Y_in = States(2);
@@ -75,17 +71,17 @@ classdef SimModel < handle
            
            % compute tire longitudenal and lateral forces with Fiala tire
            % model
-           [Ffl_long, Ffl_lat] = obj.getTireForces(omegaW_fl_in, vx_in, vy_in, Ffl_z, obj.delta, obj.T);
-           [Ffr_long, Ffr_lat] = obj.getTireForces(omegaW_fr_in, vx_in, vy_in, Ffr_z, obj.delta, obj.T);
-           [Frl_long, Frl_lat] = obj.getTireForces(omegaW_rl_in, vx_in, vy_in, Frl_z, 0, obj.T);
-           [Frr_long, Frr_lat] = obj.getTireForces(omegaW_rr_in, vx_in, vy_in, Frr_z, 0, obj.T);
+           [Ffl_long, Ffl_lat] = obj.getTireForces(omegaW_fl_in, vx_in, vy_in, Ffl_z, delta, torque);
+           [Ffr_long, Ffr_lat] = obj.getTireForces(omegaW_fr_in, vx_in, vy_in, Ffr_z, delta, torque);
+           [Frl_long, Frl_lat] = obj.getTireForces(omegaW_rl_in, vx_in, vy_in, Frl_z, 0, torque);
+           [Frr_long, Frr_lat] = obj.getTireForces(omegaW_rr_in, vx_in, vy_in, Frr_z, 0, torque);
               
            % update Fx and Fy so it can be used in the next timestep;
-           obj.Fx =  Frl_long + Frr_long - Ffl_lat*sin(obj.delta) - Ffr_lat*sin(obj.delta) ...
-               + Ffl_long*cos(obj.delta) + Ffr_long*cos(obj.delta);
+           obj.Fx =  Frl_long + Frr_long - Ffl_lat*sin(delta) - Ffr_lat*sin(delta) ...
+               + Ffl_long*cos(delta) + Ffr_long*cos(delta);
            
-           obj.Fy = Frl_lat + Frr_lat + Ffl_lat*cos(obj.delta) + Ffr_lat*cos(obj.delta) ...
-               + Ffl_long*sin(obj.delta) + Ffr_long*sin(obj.delta);
+           obj.Fy = Frl_lat + Frr_lat + Ffl_lat*cos(delta) + Ffr_lat*cos(delta) ...
+               + Ffl_long*sin(delta) + Ffr_long*sin(delta);
            
            % compute derivatives of vehicle states
            X_dot = vx_in*cos(phi_in) - vy_in*sin(phi_in);
@@ -93,23 +89,23 @@ classdef SimModel < handle
            phi_dot = omegaB_in;
            vx_dot  = 1/obj.mass*(obj.Fx - obj.mass*vy_in*obj.omegaB);
            vy_dot  = 1/obj.mass*(obj.Fy - obj.mass*vx_in*obj.omegaB);
-           omegaB_dot = 1/obj.Iz*(Ffl_lat*lf*cos(obj.delta) + Ffr_lat*lf*cos(obj.delta) ...
+           omegaB_dot = 1/obj.Iz*(Ffl_lat*lf*cos(delta) + Ffr_lat*lf*cos(delta) ...
                - Frl_lat*lr - Frr_lat*lr + (-Ffl_long - Frl_long + Ffr_long + Frr_long) * obj.width/2);
-           omegaW_fl_dot = obj.T - obj.wr * Ffl_long;
-           omegaW_fr_dot = obj.T - obj.wr * Ffr_long;
-           omegaW_rl_dot = obj.T - obj.wr * Frl_long;
-           omegaW_rr_dot = obj.T - obj.wr * Frr_long;
+           omegaW_fl_dot = torque - obj.wr * Ffl_long;
+           omegaW_fr_dot = torque - obj.wr * Ffr_long;
+           omegaW_rl_dot = torque - obj.wr * Frl_long;
+           omegaW_rr_dot = torque - obj.wr * Frr_long;
            
            States_dot = [X_dot;Y_dot; phi_dot; vx_dot; vy_dot; omegaB_dot; omegaW_fl_dot; omegaW_fr_dot; omegaW_rl_dot; omegaW_rr_dot];
            
        end
  
-      function [F_long, F_lat] = getTireForces(obj, omegaW_in, vx_in, vy_in, Fz_in, delta_in, T_in)
+      function [F_long, F_lat] = getTireForces(obj, omegaW_in, vx_in, vy_in, Fz_in, delta_in, torque_in)
             %getTireForces calculates and returns the latitudinal and
             %longitudinal forces on a wheel.
             
             % Calculate sigmaLat/ sigmaLong/ sigma
-            if sign(T_in) > 0
+            if sign(torque_in) > 0
                 sigmaLong = (obj.wr*omegaW_in - vx_in)/(obj.wr*omegaW_in);
             else
                 sigmaLong = (obj.wr*omegaW_in - vx_in)/(vx_in);

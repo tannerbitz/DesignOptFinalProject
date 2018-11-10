@@ -3,8 +3,6 @@ inputFile = 'track1.txt';
 width = 40;
 rt = RaceTrack(inputFile,width);
 
-importdata('new 1.txt')
-
 
 % rt.computeRaceTrack();
 % 
