@@ -57,13 +57,6 @@ classdef RaceTrack < handle
             obj.X = interp1(arcLen1,p_spl(:,1),obj.arcLen);
             obj.Y = interp1(arcLen1,p_spl(:,2),obj.arcLen);
             
-            
-            
-            figure
-            plot(obj.X,obj.Y, 'k--')
-            hold on
-            axis equal;
-            
             % compute track edge locations
             for i = 1:N
                 if i == 1
@@ -85,7 +78,12 @@ classdef RaceTrack < handle
                 
             end
             
+
+            figure
+            plot(obj.X,obj.Y, 'k--')
+            hold on
             plot(obj.Xin,obj.Yin, 'r-', obj.Xout,obj.Yout ,'r-');
+            axis equal;
             
         end
         

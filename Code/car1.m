@@ -9,13 +9,14 @@ car.dm     = .55;                                             % front/back load 
 car.Iz     = 2*1/12*car.mass*(car.length^2 + car.width^2);    % body moment of inertia about z axis (kg*m^2), 2 is a fundge factor
 car.hcg    = .5;                                              % center of gravity height      (m)
 car.wr     = .3048;                                           % wheel radius  (m)
-car.Iw     = .8;                                              % tire/wheel/drive train rotational intertia
+car.Iw     = .8;                                              % tire/wheel/drive train rotational intertia  (kg*m^2)
 car.maxT   = 205;                                             % maximum drivetrain torque    (N*m)
-car.mu     = 1;                                               % road/tire friction coefficient (kg*m^2)
+car.mu     = 1;                                               % road/tire friction coefficient
 car.C      = 120000;                                          % tire stiffness   (N/rad)
 
 car.refA   = 50.6*77.8*.0254^2;                               % aero reference area (m^2)
 car.Cd     = .27;                                             % drag coefficient
+car.rhoAir = 1.225;                                           % density of air (kg/m^3)
 
 % vehicle initial conditions
 car.X      = 0;     % global X coordinate
