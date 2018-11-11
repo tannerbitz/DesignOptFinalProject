@@ -11,7 +11,8 @@ car.hcg    = .5;                                              % center of gravit
 car.wr     = .3048;                                           % wheel radius  (m)
 car.Iw     = 1;                                               % tire/wheel/drive train rotational intertia  (kg*m^2)
 car.maxT   = 205;                                             % maximum drivetrain torque    (N*m)
-car.mu     = 1;                                               % road/tire friction coefficient
+car.mu_s    = 1;                                               % road/tire friction coefficient
+car.mu_k    = .8;
 car.C      = 120000;                                          % tire stiffness   (N/rad)
 
 car.refA   = 50.6*77.8*.0254^2;                               % aero reference area (m^2)
