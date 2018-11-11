@@ -42,8 +42,18 @@ end
 figure
 plot(time1,vx);
 hold on
-plot(time1,vy);
 
-legend('vx',  'vy')
+start = 100;
+ind = start:20:start+121;
+aL = rt.arcLen(ind);
+x = rt.X(ind);
+y = rt.Y(ind);
+
+aLL = aL(1):.1:aL(end); 
+xx = spline(aL,x,aLL);
+yy = spline(aL,y,aLL);
+figure(1)
+plot(x,y,'o',xx,yy,'linewidth',5)
+
 
 
