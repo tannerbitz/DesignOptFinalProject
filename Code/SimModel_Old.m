@@ -10,8 +10,8 @@ classdef SimModel < handle
         wr        % wheel radius
         Iw        % tire/wheel/drive train rotational intertia
         maxT      % maximum drivetrain torque
-        mu_k      % kinetic road/tire friction coefficient
-        mu_s      % static road/tire friction coefficient
+        mu_s      % road/tire static friction coefficient
+        mu_k      % road/tire kinetic friction coefficient
         C         % tire stiffness
         refA      % aerodynamics reference area
         Cd        % drag coefficient
@@ -41,13 +41,13 @@ classdef SimModel < handle
         end
         
         
-        function update(obj,deltaT, delta, F_long)
+        function update(obj,deltaT, delta, torque)
             % update vehicle states using ODE45
             
-            States0 = [obj.X, obj.Y, obj.phi, obj.vx, obj.vy, obj.omegaB]';
+            States0 = [obj.X, obj.Y, obj.phi, obj.vx, obj.vy, obj.omegaB, obj.omegaW_fl, obj.omegaW_fr, obj.omegaW_rl, obj.omegaW_rr]';
             
             
-            [~,newStates] = ode45(@(t,States) obj.calcRHS(t,States, delta,F_long), [0 deltaT], States0);
+            [~,newStates] = ode45(@(t,States) obj.calcRHS(t,States, delta,torque), [0 deltaT], States0);
             
             obj.X = newStates(end,1);
             obj.Y = newStates(end,2);
@@ -55,9 +55,13 @@ classdef SimModel < handle
             obj.vx = newStates(end,4);
             obj.vy = newStates(end,5);
             obj.omegaB = newStates(end,6);
+            obj.omegaW_fl = newStates(end,7);
+            obj.omegaW_fr = newStates(end,8);
+            obj.omegaW_rl = newStates(end,9);
+            obj.omegaW_rr = newStates(end,10);
         end
         
-        function [States_dot] = calcRHS(obj,~,States, delta, F_long)
+        function [States_dot] = calcRHS(obj,~,States, delta, torque)
             
             X_in = States(1);
             Y_in = States(2);
@@ -65,7 +69,10 @@ classdef SimModel < handle
             vx_in = States(4);
             vy_in = States(5);
             omegaB_in = States(6);
-
+            omegaW_fl_in = States(7);
+            omegaW_fr_in = States(8);
+            omegaW_rl_in = States(9);
+            omegaW_rr_in = States(10);
             
             % compute lengths from cg to front and rear end
             lf = obj.dm*obj.length;
@@ -80,17 +87,11 @@ classdef SimModel < handle
             
             % compute tire longitudenal and lateral forces with Fiala tire
             % model
-            Ffl_lat = obj.getTireForcesMassera(omegaB_in, delta, vy_in, vx_in, Ffl_z, lr);
-            Ffr_lat = obj.getTireForcesMassera(omegaB_in, delta, vy_in, vx_in, Ffr_z, lr);
-            Frl_lat = obj.getTireForcesMassera(omegaB_in, 0, vy_in, vx_in, Frl_z, -lf);
-            Frr_lat = obj.getTireForcesMassera(omegaB_in, 0, vy_in, vx_in, Frr_z, -lf);
-
-            Ffl_long = F_long;
-            Ffr_long = F_long;
-            Frl_long = F_long;
-            Frr_long = F_long;
-
-
+            [Ffl_long, Ffl_lat] = obj.getTireForces(omegaW_fl_in, vx_in, vy_in, Ffl_z, delta, torque);
+            [Ffr_long, Ffr_lat] = obj.getTireForces(omegaW_fr_in, vx_in, vy_in, Ffr_z, delta, torque);
+            [Frl_long, Frl_lat] = obj.getTireForces(omegaW_rl_in, vx_in, vy_in, Frl_z, 0, torque);
+            [Frr_long, Frr_lat] = obj.getTireForces(omegaW_rr_in, vx_in, vy_in, Frr_z, 0, torque);
+            
             % update Fx and Fy so it can be used in the next timestep;
             obj.Fx =  Frl_long + Frr_long - Ffl_lat*sin(delta) - Ffr_lat*sin(delta) ...
                 + Ffl_long*cos(delta) + Ffr_long*cos(delta);
@@ -106,9 +107,12 @@ classdef SimModel < handle
             vy_dot  = 1/obj.mass*(obj.Fy - obj.mass*vx_in*obj.omegaB);
             omegaB_dot = 1/obj.Iz*(Ffl_lat*lf*cos(delta) + Ffr_lat*lf*cos(delta) ...
                 - Frl_lat*lr - Frr_lat*lr + (-Ffl_long*sin(delta) - Frl_long + Ffr_long*sin(delta) + Frr_long) * obj.width/2);
-
+            omegaW_fl_dot = 1/obj.Iw*(torque - obj.wr * Ffl_long);
+            omegaW_fr_dot = 1/obj.Iw*(torque - obj.wr * Ffr_long);
+            omegaW_rl_dot = 1/obj.Iw*(torque - obj.wr * Frl_long);
+            omegaW_rr_dot = 1/obj.Iw*(torque - obj.wr * Frr_long);
             
-            States_dot = [X_dot,Y_dot, phi_dot, vx_dot, vy_dot, omegaB_dot]';
+            States_dot = [X_dot,Y_dot, phi_dot, vx_dot, vy_dot, omegaB_dot, omegaW_fl_dot, omegaW_fr_dot, omegaW_rl_dot, omegaW_rr_dot]';
             
         end
         
@@ -146,31 +150,9 @@ classdef SimModel < handle
             
         end
         
-
-        function F_lat = getTireForcesMassera(obj, omegaW_in, delta_in, vy_in, vx_in, Fz_in, frontBackLength)
-            %GETTIREFORCESMASSERA returns the lateral force on a given
-            %wheel based on the Fiala Tire Model section of Massera (2015)
-            % frontBackLength =  lr for front wheel
-            % frontBackLength = -lf for back wheel
-            alpha = atan2(vy_in+frontBackLength*omegaW_in, vx_in) - delta_in ;
-            f_alpha = obj.C*tan(alpha);
-            R_mu = obj.mu_k/obj.mu_s;
-    
-            if abs(alpha) <= atan(3*obj.mu_s*Fz_in/obj.C)
-                F_lat = -f_alpha + (2-R_mu)/(3*obj.mu_s*Fz_in)*abs(f_alpha)*f_alpha - ...
-                        (1-2/3*R_mu)/(3*obj.mu_s*Fz_in)^2*f_alpha^3;
-            else
-                F_lat = -sign(alpha)*obj.mu_s*Fz_in;
-            end
-
-
-
-        end
-
-
         function [] = plotCar(obj)
-            deltax1 = [obj.length/2, -obj.length/2, -obj.length/2, obj.length/2, obj.length/2+obj.length/4];
-            deltay1 = [obj.width/2, obj.width/2, -obj.width/2, -obj.width/2, 0];
+            deltax1 = [obj.length/2, -obj.length/2, -obj.length/2, obj.length/2];
+            deltay1 = [obj.width/2, obj.width/2, -obj.width/2, -obj.width/2];
             
             deltax = cos(obj.phi)*deltax1 - sin(obj.phi)*deltay1;
             deltay = sin(obj.phi)*deltax1 + cos(obj.phi)*deltay1;
@@ -178,7 +160,7 @@ classdef SimModel < handle
             x = obj.X + deltax;
             y = obj.Y + deltay;
             
-            patch(x,y,sqrt(obj.vx^2 + obj.vy^2))
+            patch(x,y,'b')
         end
         
         
