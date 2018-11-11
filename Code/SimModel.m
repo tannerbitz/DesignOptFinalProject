@@ -102,29 +102,30 @@ classdef SimModel < handle
             X_dot = vx_in*cos(phi_in) - vy_in*sin(phi_in);
             Y_dot = vx_in*sin(phi_in) + vy_in*cos(phi_in);
             phi_dot = omegaB_in;
-            vx_dot  = 1/obj.mass*(obj.Fx - obj.mass*vy_in*obj.omegaB - sign(vx_in)*.5*obj.rhoAir*obj.Cd*obj.refA*vx_in^2);
-            vy_dot  = 1/obj.mass*(obj.Fy - obj.mass*vx_in*obj.omegaB - sign(vy_in)*.5*obj.rhoAir*obj.Cd*obj.refA*vy_in^2);
+            vx_dot  = 1/obj.mass*(obj.Fx + obj.mass*vy_in*obj.omegaB - sign(vx_in)*.5*obj.rhoAir*obj.Cd*obj.refA*vx_in^2);
+            vy_dot  = 1/obj.mass*(obj.Fy - obj.mass*vx_in*obj.omegaB);
             omegaB_dot = 1/obj.Iz*(Ffl_lat*lf*cos(delta) + Ffr_lat*lf*cos(delta) ...
-                - Frl_lat*lr - Frr_lat*lr + (-Ffl_long - Frl_long + Ffr_long + Frr_long) * obj.width/2);
+                - Frl_lat*lr - Frr_lat*lr + (-Ffl_long*sin(delta) - Frl_long + Ffr_long*sin(delta) + Frr_long) * obj.width/2);
             omegaW_fl_dot = 1/obj.Iw*(torque - obj.wr * Ffl_long);
             omegaW_fr_dot = 1/obj.Iw*(torque - obj.wr * Ffr_long);
             omegaW_rl_dot = 1/obj.Iw*(torque - obj.wr * Frl_long);
             omegaW_rr_dot = 1/obj.Iw*(torque - obj.wr * Frr_long);
             
-            States_dot = [X_dot;Y_dot; phi_dot; vx_dot; vy_dot; omegaB_dot; omegaW_fl_dot; omegaW_fr_dot; omegaW_rl_dot; omegaW_rr_dot];
+            States_dot = [X_dot,Y_dot, phi_dot, vx_dot, vy_dot, omegaB_dot, omegaW_fl_dot, omegaW_fr_dot, omegaW_rl_dot, omegaW_rr_dot]';
             
         end
         
         function [F_long, F_lat] = getTireForces(obj, omegaW_in, vx_in, vy_in, Fz_in, delta_in, torque_in)
             %getTireForces calculates and returns the latitudinal and
             %longitudinal forces on a wheel.
-            eps = 10^-8;
+            eps = 10^-13;
             % Calculate sigmaLat/ sigmaLong/ sigma
-            if sign(torque_in) > 0
+            if sign(torque_in) >= 0
                 sigmaLong = (obj.wr*omegaW_in - vx_in)/(obj.wr*omegaW_in+eps);
             else
                 sigmaLong = (obj.wr*omegaW_in - vx_in)/(vx_in+eps);
             end
+            
             
             alpha = delta_in - atan2(vy_in,vx_in);
             
@@ -136,14 +137,14 @@ classdef SimModel < handle
             
             % Determine if tire is sliding/ total force
             thetaPoly = 3*theta*sigma - 3*(theta*sigma)^2 + (theta*sigma)^3;
-            if thetaPoly < 1 %not sliding
+            if sigma < .15 %thetaPoly < 1 %not sliding
                 Ft = obj.mu*Fz_in*thetaPoly;
             else
                 Ft = obj.mu*Fz_in;
             end
             
             % Calculate lat and long tire forces
-            F_long = sigmaLong/(sigma+eps)*Ft;
+            F_long = max(abs(sigmaLong/(sigma+eps)*Ft), abs(torque_in/obj.wr));
             F_lat = sigmaLat/(sigma+eps)*Ft;
             
         end
