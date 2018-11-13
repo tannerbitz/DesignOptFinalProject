@@ -1,17 +1,18 @@
 close all; clear all;
 
+endTime = 20;
+Ts = .1;
 N = 40;      % horizon length
 inputFile = 'track1.txt';
 width = 12;
+
+
 rt = RaceTrack(inputFile,width);
 rt.computeRaceTrack();
-
 car = car1();
-car.plotCar()
+mpc = MPC(Ts,N);
 
-dt = .1;
-
-time1 = 0:dt:20;
+time1 = 0:Ts:endTime;
 
 % initialize vehicle state histories vectors
 X = [];
@@ -23,15 +24,21 @@ omegaB = [];
 
 %initialize prediction horizon vectors
 
-force = 1000;
+
+F_long = 1000;
 delta = 10;
 
-T = [];
+lapCount = 0;
 for n = 1:length(time1)
     t = time1(n);
     
+    theta1 = MPC.theta;
+    [theta1,X1,Y1,lapCount] = rt.getXY(theta1,lapCount);
+    [ax,bx,cx,dx,ay,by,cy,dy] = rt.getCubicPolynomial(theta1,X1,Y1);
+    
+    
     % update vehicle states using ode45
-    car.update(dt,delta*pi/180,force);
+    car.update(Ts,delta*pi/180,F_long);
     car.plotCar();
 
     

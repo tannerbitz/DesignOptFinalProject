@@ -18,16 +18,17 @@ classdef MPC < handle
     end
     
     methods
-        function obj = MPC(Ts,N)
+        function obj = MPC(~,Ts,N)
             addpath ./TaylorEqs/;
             obj.Ts = Ts;
             obj.N = N;
             
             
-            % compute initial pridicition horizon
+            % compute initial pridiciton horizon
             obj.States =  zeros(6,N); %[car.X, car.Y, car.phi, car.vx, car.vy, car.omegaB]';
-            obj.U      =  zeros(2,N); %[car.F_long, car.delta]';
-            obj.thetaA   = linspace(0,5,N);
+            obj.U      =  zeros(6, %[car.F_long, car.delta]';
+            obj.thetaA(1)   = 0;
+            
             
             
         end

@@ -1,8 +1,6 @@
 classdef RaceTrack < handle
     properties
         controlPoints  % racetrack control points loaded from file
-        N1
-        N2
         theta          % arc lengths along track at corresponding XY
         X              % x coordinates
         Y              % y coordinates
@@ -21,44 +19,24 @@ classdef RaceTrack < handle
 
         end
         
-        function [theta_out,X_out,Y_out,lapCount] = getXY(theta_in, lapCount)
-            % if we're passed the end of the track, start at the beginning
-            % again
+        function [theta_out,X_out,Y_out] = getXY(theta_in)
+            
+            % if we're passed the end of the track, start at the biginning
+            % again.
             if theta_in(1) >= obj.theta(end)
                 theta_out = theta_in - obj.theta(end);
-                lapCount = lapCount + 1;
             else
                 theta_out = theta_in;
             end
                 
+            
+            
             ind = find(obj.theta >= theta_out(1) & obj.theta <= theta_out(end));
             
             X_out = interp1(obj.theta(ind), obj.X(ind),obj.theta_out);
             Y_out = interp1(obj.theta(ind), obj.Y(ind),obj.theta_out);
         end
-        
-        function [ax,bx,cx,dx,ay,by,cy,dy] = getCubicPolynomial(obj,theta_in,X_in,Y_in)
-            
-            % compute vacndermond matrix
-            for i = 1:length(theta_in)
-                V(i,:) = [1 theta_in(i) theta_in(i)^2 theta_in(i)^3];
-            end
-            
-            
-            coef_x = inv(V'*V)*V'*X_in';
-            ax = coef_x(1);
-            bx = coef_x(2);
-            cx = coef_x(3);
-            dx = coef_x(4);
-            
-            coef_y = inv(V'*V)*V'*Y_in';
-            ay = coef_y(1);
-            by = coef_y(2);
-            cy = coef_y(3);
-            dy = coef_y(4);
-            
-        end
-        
+
         function obj = computeRaceTrack(obj)
             order = 3; % cubic polynomial
             n =  size(obj.controlPoints,1); % number of control points
@@ -88,8 +66,7 @@ classdef RaceTrack < handle
 
             % The sefments of the b-spline track are not equal arc length, so we
             % intperolate it onto a unifrom arc length vector
-            
-            obj.N1 = 1000;
+            N = 1000;
             thetaMin = min(theta1);
             thetaMax = max(theta1);
             obj.theta = linspace(thetaMin,thetaMax,N);
@@ -118,13 +95,8 @@ classdef RaceTrack < handle
             end
             
             
-            % lets include a second loop around the track, this makes it
-            % easier to to compute the cubic spline when the car gets to
-            % the end of the track
-            obj.theta = [obj.theta, obj.theta(2:end)+obj.theta(end)];
-            obj.X = [obj.X, obj.X(2:end)];
-            obj.Y = [obj.Y, obj.Y(2:end)];
-            
+            % lets include a second loops ar
+
 
             figure
             plot(obj.X,obj.Y, 'k--')

@@ -24,7 +24,7 @@ car.rhoAir = 1.225;                                           % density of air (
 car.X      = 0;     % global X coordinate
 car.Y      = 0;     % global Y coordinate
 car.phi    = 0;  % vehicle heading relative to global X axis  [rad]
-car.vx     = 0;   % body x velocity
+car.vx     = 0;   % body x velocity, initialize at 1 m/s
 car.vy     = 0;   % body y velocity
 car.omegaB = 0;   % body rotation rate
 
