@@ -1,12 +1,12 @@
 classdef MPC < handle
    properties
-      f
-      A
-      B
-      Gamma_el
-      Gamma_ec
-      C_el
-      C_ec
+      f         % (6xN)
+      A         % (6x6xN)
+      B         % (6x2xN)
+      Gamma_el  % (3x3xN)
+      Gamma_ec  % (3x3xN)
+      C_el      % (3xN)
+      C_ec      % (3xN)
       
       States    % (6xN) [X, Y, varphi, vx, vy, omegaB]'
       thetaA    % (1xN) [thetaA]
@@ -39,13 +39,23 @@ classdef MPC < handle
            
        end
        
-       function [] = linearize(obj, car)
+       function [] = linearize(obj, car, ax, ay, bx, by, cx, cy, dx, dy)
             
             Fz_f = .5*car.mass*9.81*car.dm - car.Fx*car.hcg/car.length - car.Fy*car.hcg/car.width;
             Fz_r = .5*car.mass*9.81*car.dm - car.Fx*car.hcg/car.length + car.Fy*car.hcg/car.width;
 
             N1 = obj.N;
             for i = 1:N1
+                %%%   INPUT VECTOR for Gamma_ec, Gamma_el, Cec, Cel %%%%%
+                %    (X,Y,ax,ay,bx,by,cx,cy,dx,dy,theta)
+                X_in = obj.States(1, i);
+                Y_in = obj.States(2, i);
+                thetaA_in = obj.theta(i);
+                obj.GammaEc(:, :, i) = GammaEc(X_in, Y_in, ax, ay, bx, by, cx, cy, dx, dy, thetaA_in);
+                obj.GammaEl(:, :, i) = GammaEl(X_in, Y_in, ax, ay, bx, by, cx, cy, dx, dy, thetaA_in);               
+                obj.Cec(:, i) = Cec(X_in, Y_in, ax, ay, bx, by, cx, cy, dx, dy, thetaA_in);
+                obj.Cel(:, i) = Cel(X_in, Y_in, ax, ay, bx, by, cx, cy, dx, dy, thetaA_in);
+                
                 alphaf = atan2(obj.States(5, i) + car.lr*obj.States(6, i), obj.States(4, i)) - obj.U(2, i);
                 alphar = atan2(obj.States(5, i) - car.lf*obj.States(6, i), obj.States(4, i));
     
@@ -53,7 +63,7 @@ classdef MPC < handle
                 alphaFMax = atan2(3*car.mu_s*Fz_f, car.C);
                 alphaRMax = atan2(3*car.mu_s*Fz_r, car.C);
 
-                %%%   INPUT VECTOR %%%%%
+                %%%   INPUT VECTOR for f, A, B %%%%%
                 %    C,Flong,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy
                 C_in = car.C;
                 Flong_in = obj.U(1, i);
@@ -70,6 +80,9 @@ classdef MPC < handle
                 varphi_in = obj.States(3, i);
                 vx_in = obj.States(4, i);
                 vy_in = obj.States(5, i);
+
+
+
                
                 if (abs(alphaf) < alphaFMax  && abs(alphar) < alphaRMax) % front grip, rear grip
                     obj.fn(:,i) = statesdot_fgrg(C_in, ...
@@ -88,7 +101,7 @@ classdef MPC < handle
                                                 vx_in, ...
                                                 vy_in);
 
-                    obj.A(:,i) = A_fgrg(C_in, ...
+                    obj.A(:,:,i) = A_fgrg(C_in, ...
                                         Flong_in, ...
                                         Fz_f_in, ...
                                         Fz_r_in, ...
@@ -119,8 +132,8 @@ classdef MPC < handle
                                         varphi_in, ...
                                         vx_in, ...
                                         vy_in);
-               
-               
+
+
                 elseif (abs(alphaf) >= alphaFMax && abs(alphar) < alphaRMax) % front slip, rear grip
                      obj.fn(:,i) = statesdot_fsrg(C_in, ...
                                                 Flong_in, ...
@@ -138,7 +151,7 @@ classdef MPC < handle
                                                 vx_in, ...
                                                 vy_in);
 
-                    obj.A(:,i) = A_fsrg(C_in, ...
+                    obj.A(:,:,i) = A_fsrg(C_in, ...
                                         Flong_in, ...
                                         Fz_f_in, ...
                                         Fz_r_in, ...
@@ -187,7 +200,7 @@ classdef MPC < handle
                                                 vx_in, ...
                                                 vy_in);
 
-                    obj.A(:,i) = A_fgrs(C_in, ...
+                    obj.A(:,:,i) = A_fgrs(C_in, ...
                                         Flong_in, ...
                                         Fz_f_in, ...
                                         Fz_r_in, ...
@@ -236,7 +249,7 @@ classdef MPC < handle
                                                 vx_in, ...
                                                 vy_in);
 
-                    obj.A(:,i) = A_fsrs(C_in, ...
+                    obj.A(:,:,i) = A_fsrs(C_in, ...
                                         Flong_in, ...
                                         Fz_f_in, ...
                                         Fz_r_in, ...

@@ -1,4 +1,4 @@
-function C_el = getCel(X,Y,ax,ay,bx,by,cx,cy,dx,dy,theta)
+function C_el = Cel(X,Y,ax,ay,bx,by,cx,cy,dx,dy,theta)
 %GETCEL
 %    C_EL = GETCEL(X,Y,AX,AY,BX,BY,CX,CY,DX,DY,THETA)
 

@@ -1,4 +1,4 @@
-function Gamma_el = getGammaEl(X,Y,ax,ay,bx,by,cx,cy,dx,dy,theta)
+function Gamma_el = GammaEl(X,Y,ax,ay,bx,by,cx,cy,dx,dy,theta)
 %GETGAMMAEL
 %    GAMMA_EL = GETGAMMAEL(X,Y,AX,AY,BX,BY,CX,CY,DX,DY,THETA)
 
