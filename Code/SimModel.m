@@ -179,6 +179,7 @@ classdef SimModel < handle
             y = obj.Y + deltay;
             
             patch(x,y,sqrt(obj.vx^2 + obj.vy^2))
+            colormap(jet)
         end
         
         
