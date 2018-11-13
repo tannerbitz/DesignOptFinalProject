@@ -31,7 +31,10 @@ classdef RaceTrack < handle
                 theta_out = theta_in;
             end
                 
-            ind = find(obj.theta >= theta_out(1) & obj.theta <= theta_out(end));
+            indStart = find(obj.theta<= theta_in);
+            indStart = indStart(end);
+            indEnd = find(obj.theta >= theta_in)
+            indEnd = indStart(end);
             
             X_out = interp1(obj.theta(ind), obj.X(ind),theta_out);
             Y_out = interp1(obj.theta(ind), obj.Y(ind),theta_out);

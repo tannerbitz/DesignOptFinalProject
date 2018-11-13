@@ -18,22 +18,25 @@ classdef MPC < handle
     end
     
     methods
-        function obj = MPC(Ts,N)
+        function obj = MPC(Ts,N, X0, Y0)
             addpath ./TaylorEqs/;
             obj.Ts = Ts;
             obj.N = N;
             
             
-            % compute initial pridicition horizon
+            % set initial predicition horizon
             obj.States =  zeros(6,N); %[car.X, car.Y, car.phi, car.vx, car.vy, car.omegaB]';
+            obj.States(1,:) = X0;
+            obj.States(2,:) = Y0;
             obj.U      =  zeros(2,N); %[car.F_long, car.delta]';
             obj.thetaA   = linspace(0,5,N);
             
             
         end
         
-        function [] = setStates(obj,States)
+        function [] = setLinPoints(obj,States)
             N1 = obj.N;
+            
             % set initial states to current sim states
             obj.States(:,1) = States;
             
@@ -44,6 +47,12 @@ classdef MPC < handle
             
             % compute last state
             obj.States(:,N1) = obj.States(:,N1) + obj.Ts*obj.f(:,N1);
+            
+            % shift control states by one sampling period
+            for i = 1:N1-1
+                obj.U(:,i) = obj.U(:,i+1);
+            end
+            
         end
         
         function [] = linearize(obj, car, ax, ay, bx, by, cx, cy, dx, dy)
@@ -57,60 +66,60 @@ classdef MPC < handle
                 %    (X,Y,ax,ay,bx,by,cx,cy,dx,dy,theta)
                 X_in = obj.States(1, i);
                 Y_in = obj.States(2, i);
-                thetaA_in = obj.theta(i);
+                thetaA_in = obj.thetaA(i);
                 
                 inputs = {X_in, Y_in, ax, ay, bx, by, cx, cy, dx, dy, thetaA_in};
-                obj.GammaEc(:, :, i) = GammaEc(inputs);
-                obj.GammaEl(:, :, i) = GammaEl(inputs);
-                obj.Cec(:, i) = Cec(inputs);
-                obj.Cel(:, i) = Cel(inputs);
-                
-                alphaf = atan2(obj.States(5, i) + car.lr*obj.States(6, i), obj.States(4, i)) - obj.U(2, i);
-                alphar = atan2(obj.States(5, i) - car.lf*obj.States(6, i), obj.States(4, i));
-                
+                obj.Gamma_ec(:, :, i) = GammaEc(inputs{:});
+                obj.Gamma_el(:, :, i) = GammaEl(inputs{:});
+                obj.C_ec(:, i) = Cec(inputs{:});
+                obj.C_el(:, i) = Cel(inputs{:});
+
+                lf = car.dm*car.length;  %lengths from cg to front and rear end
+                lr = (1-car.dm)*car.length;
                 R = car.mu_k/car.mu_s;
                 alphaFMax = atan2(3*car.mu_s*Fz_f, car.C);
                 alphaRMax = atan2(3*car.mu_s*Fz_r, car.C);
+                      
+                alphaf = atan2(obj.States(5, i) + lr*obj.States(6, i), obj.States(4, i)) - obj.U(2, i);
+                alphar = atan2(obj.States(5, i) - lf*obj.States(6, i), obj.States(4, i));
                 
                 %%%   INPUT VECTOR for f, A, B %%%%%
                 %    C,Flong,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy
-                C_in = car.C;
-                Flong_in = obj.U(1, i);
-                Fz_f_in = Fz_f;
-                Fz_r_in = Fz_r;
-                Iz_in = car.Iz;
-                R_in = R;
-                delta_in = obj.U(2, i);
-                lf_in = car.lf;
-                lr_in = car.lr;
-                m_in = car.mass;
-                mu_in = car.mu_s;
-                omegaB_in = obj.States(6, i);
-                varphi_in = obj.States(3, i);
-                vx_in = obj.States(4, i);
-                vy_in = obj.States(5, i);
-                
-                inputs = {C_in, Flong_in, Fz_f_in, Fz_r_in, Iz_in, R_in, delta_in, lf_in, lr_in, m_in, mu_in, omegaB_in, varphi_in, vx_in, vy_in};
+                C = car.C;
+                Flong = obj.U(1, i);
+                Fz_f = Fz_f;
+                Fz_r = Fz_r;
+                Iz = car.Iz;
+                R = R;
+                delta = obj.U(2, i);
+                lf = lf;
+                lr = lr;
+                m = car.mass;
+                mu = car.mu_s;
+                omegaB = obj.States(6, i);
+                varphi = obj.States(3, i);
+                vx = obj.States(4, i);
+                vy = obj.States(5, i);
                 
                 if (abs(alphaf) < alphaFMax  && abs(alphar) < alphaRMax) % front grip, rear grip
-                    obj.fn(:,i) = statesdot_fgrg(inputs);
-                    obj.A(:,:,i) = A_fgrg(inputs);
-                    obj.B(:,:,i) = B_fgrg(inputs);
+                    obj.f(:,i) = statesdot_fgrg(C,Flong,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    obj.A(:,:,i) = A_fgrg(C,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    obj.B(:,:,i) = B_fgrg(C,Flong,Fz_f,Iz,R,delta,lf,lr,m,mu,omegaB,vx,vy);
                     
                 elseif (abs(alphaf) >= alphaFMax && abs(alphar) < alphaRMax) % front slip, rear grip
-                    obj.fn(:,i) = statesdot_fsrg(intputs);
-                    obj.A(:,:,i) = A_fsrg(intputs);
-                    obj.B(:,:,i) = B_fsrg(intputs);
+                    obj.f(:,i) = statesdot_fsrg(C,Flong,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    obj.A(:,:,i) = A_fsrg(C,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    obj.B(:,:,i) = B_fsrg(Flong,Fz_f,Iz,delta,lf,lr,m,mu,omegaB,vx,vy);
                     
                 elseif (abs(alphaf) < alphaFMax && abs(alphar) >= alphaRMax) % front grip, rear slip
-                    obj.fn(:,i) = statesdot_fgrs(intputs);
-                    obj.A(:,:,i) = A_fgrs(intputs);
-                    obj.B(:,:,i) = B_fgrs(intputs);
+                    obj.f(:,i) = statesdot_fgrs(C,Flong,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    obj.A(:,:,i) = A_fgrs(C,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    obj.B(:,:,i) = B_fgrs(C,Flong,Fz_f,Iz,R,delta,lf,lr,m,mu,omegaB,vx,vy);
                     
                 elseif (abs(alphaf) >= alphaFMax && abs(alphar) >= alphaRMax) % front slip, rear slip
-                    obj.fn(:,i) = statesdot_fsrs(intputs);
-                    obj.A(:,:,i) = A_fsrs(intputs);
-                    obj.B(:,:,i) = B_fsrs(intputs);
+                    obj.f(:,i) = statesdot_fsrs(Flong,Fz_f,Fz_r,Iz,delta,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    obj.A(:,:,i) = A_fsrs(Fz_f,Fz_r,Iz,delta,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    obj.B(:,:,i) = B_fsrs(Flong,Fz_f,Iz,delta,lf,lr,m,mu,omegaB,vx,vy);
                 end
             end
         end
@@ -136,15 +145,14 @@ classdef MPC < handle
               
             
             % these dont need to be outputed during optimization, they can
-            % be computed and stored once its all done
+            % be computed and stored from the other opt variables after its all done
             thetaTemp = zeros(1,obj.N);
             StatesTemp = zeros(6,obj.N);
             thetaTemp(1) = theta;
             StatesTemp(1) = obj.States(1);
             
             
-            cost = gamma*obj.Ts*v(1);
-            
+            cost = gamma*obj.Ts*v(1);  
             for k = 2:obj.N
                 % step theta forward in time
                 thetaTemp(k) = thetaTemp(k-1) + v(k)*obj.Ts;
@@ -155,10 +163,11 @@ classdef MPC < handle
                     + obj.B(:,:,k-1)*([F_long(k-1),delta(k-1)] - obj.U(:,k-1)) + obj.f(:,k-1));
                 
                 % add the next term in the cost function
-                cost = cost + [StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)]'*obj.Gamma_el(:,:,k)*[StatesTemp(1,k), StatesTemp(2,k), thetaTemp(k)] ...
-                    + obj.C_el(k)*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)] ...
-                    + [StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)]'*obj.Gamma_ec(:,:,k)*[StatesTemp(1,k), StatesTemp(2,k), thetaTemp(k)] ...
-                    + obj.C_ec(k)*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)] ...
+                cost = cost ...
+                    + ql*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)]'*obj.Gamma_el(:,:,k)*[StatesTemp(1,k), StatesTemp(2,k), thetaTemp(k)] ...
+                    + ql*obj.C_el(k)*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)] ...
+                    + qc*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)]'*obj.Gamma_ec(:,:,k)*[StatesTemp(1,k), StatesTemp(2,k), thetaTemp(k)] ...
+                    + qc*obj.C_ec(k)*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)] ...
                     - gamma*v(k)*obj.Ts ...
                     + [F_long(k)-F_long(k-1); delta(k)-delta(k-1); v(k)-v(k-1)]'*R*[F_long(k)-F_long(k-1); delta(k)-delta(k-1); v(k)-v(k-1)];
                 

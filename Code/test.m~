@@ -6,13 +6,22 @@ N = 40;      % horizon length
 inputFile = 'track1.txt';
 width = 12;
 
+time1 = 0:Ts:endTime;
 
+% compute racetrack using knots from inputsFile
 rt = RaceTrack(inputFile,width);
 rt.computeRaceTrack();
-car = car1(rt);  % intializes sim model st 
-mpc = MPC(Ts,N);
+X0 = rt.X(1);
+Y0 = rt.Y(1);
 
-time1 = 0:Ts:endTime;
+% intialize sim model physical properties and states
+car = car1();  
+car.X = X0;
+car.Y = Y0;
+
+% initalize Model Pridictive Controller
+mpc = MPC(Ts,N,X0,Y0);
+
 
 % initialize vehicle state histories vectors
 X = [];
@@ -31,14 +40,16 @@ for n = 1:length(time1)
     t = time1(n);
     
     
-    % calculate cubic apporximation to track over the the prediction
+    % calculate cubic approximation to track over the the prediction
     % horizon
     theta1 = mpc.thetaA;
     [theta1,X1,Y1,lapCount] = rt.getXY(theta1,lapCount);
     [ax,bx,cx,dx,ay,by,cy,dy] = rt.getCubicPolynomial(theta1,X1,Y1);
     
-    
-    
+    % set the new linearization states for the MPC controller
+    States = [car.X,car.Y, car.phi,car.vx,car.vy,car.omegaB];
+    U = [F_long,delta]
+    mpc.setStates(States,U);
     
     
     % update simulation model states using ode45
@@ -47,14 +58,14 @@ for n = 1:length(time1)
 
     
     % save history of states
-    X = [X car.X];
-    Y = [Y car.Y];
-    phi = [phi car.phi];
-    vx = [vx car.vx];
-    vy = [vy car.vy];
-    omegaB = [omegaB car.omegaB];
-    %f_long = [f_long ];
-    %delta  = [delta]
+    X_hist = [X car.X];
+    Y_hist = [Y_hist car.Y];
+    phi_hist = [phi_hist car.phi];
+    vx_hist = [vx_hist car.vx];
+    vy_hist = [vy_hist car.vy];
+    omegaB_hist = [omegaB car.omegaB];
+    F_long_hist = [F_long_hist F_long];
+    delta_hist  = [delta_hist delta]
 
 end
 
