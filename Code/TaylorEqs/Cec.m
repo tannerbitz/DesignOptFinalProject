@@ -1,4 +1,4 @@
-function C_ec = getCec(X,Y,ax,ay,bx,by,cx,cy,dx,dy,theta)
+function C_ec = Cec(X,Y,ax,ay,bx,by,cx,cy,dx,dy,theta)
 %GETCEC
 %    C_EC = GETCEC(X,Y,AX,AY,BX,BY,CX,CY,DX,DY,THETA)
 

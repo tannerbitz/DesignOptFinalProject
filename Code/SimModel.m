@@ -9,10 +9,11 @@ classdef SimModel < handle
         hcg       % center of gravity height
         wr        % wheel radius
         Iw        % tire/wheel/drive train rotational intertia
-        maxT      % maximum drivetrain torque
         mu_k      % kinetic road/tire friction coefficient
         mu_s      % static road/tire friction coefficient
         C         % tire stiffness
+        F_long_accel   % max (positive) acceleration force on each wheel (N)
+        F_long_brake   % max (negative) braking force on each wheel (N)
         refA      % aerodynamics reference area
         Cd        % drag coefficient
         rhoAir    % density of air

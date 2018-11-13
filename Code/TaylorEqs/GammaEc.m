@@ -1,4 +1,4 @@
-function Gamma_ec = getGammaEc(X,Y,ax,ay,bx,by,cx,cy,dx,dy,theta)
+function Gamma_ec = GammaEc(X,Y,ax,ay,bx,by,cx,cy,dx,dy,theta)
 %GETGAMMAEC
 %    GAMMA_EC = GETGAMMAEC(X,Y,AX,AY,BX,BY,CX,CY,DX,DY,THETA)
 
