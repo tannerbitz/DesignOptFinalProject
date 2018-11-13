@@ -33,8 +33,8 @@ classdef MPC < handle
               obj.States(:,i) = obj.States(:,i+1);  
            end
            
-           % compute last state ...
-           obj.States(:,N1) = obj.States(:,N1) + obj.Ts*( obj.A(:,:,N1)*obj.States(:,N1) + obj.B(:,:,N1)*uN + obj.f(:,N1)); 
+           % compute last state 
+           obj.States(:,N1) = obj.States(:,N1) + obj.Ts*obj.f(:,N1); 
            
        end
        
