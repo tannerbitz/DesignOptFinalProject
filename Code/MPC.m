@@ -10,9 +10,12 @@ classdef MPC < handle
         
         States    % (6xN) [X, Y, varphi, vx, vy, omegaB]'
         thetaA    % (1xN) [thetaA]
-        U         % (2xN) [Flong, delta]'
+        F_long    % (1xN) [Flong]
+        delta     % (1xN) [delta]
+        v         % (1xN) [v]
         
-        Ts
+        
+        Ts        % sampling period
         N         % Horizon length
         
     end
@@ -28,8 +31,10 @@ classdef MPC < handle
             obj.States =  zeros(6,N); %[car.X, car.Y, car.phi, car.vx, car.vy, car.omegaB]';
             obj.States(1,:) = X0;
             obj.States(2,:) = Y0;
-            obj.U      =  zeros(2,N); %[car.F_long, car.delta]';
-            obj.thetaA   = linspace(0,5,N);
+            obj.F_long      =  zeros(1,N); %[car.F_long, car.delta]';
+            obj.delta       =  zeros(1,N); %[car.F_long, car.delta]';
+            obj.thetaA      = linspace(0,5,N);
+            obj.v           = zeros(1,N); 
             
             
         end
@@ -48,9 +53,12 @@ classdef MPC < handle
             % compute last state
             obj.States(:,N1) = obj.States(:,N1) + obj.Ts*obj.f(:,N1);
             
-            % shift control states by one sampling period
+            % shift optimization vars by one sampling period to use as
+            % linearization points and inital guess in fmincon
             for i = 1:N1-1
-                obj.U(:,i) = obj.U(:,i+1);
+                obj.F_long(i) = obj.F_long(i+1);
+                obj.delta(i) = obj.delta(i+1);
+                obj.v(i) = obj.v(i+1);
             end
             
         end
@@ -80,18 +88,18 @@ classdef MPC < handle
                 alphaFMax = atan2(3*car.mu_s*Fz_f, car.C);
                 alphaRMax = atan2(3*car.mu_s*Fz_r, car.C);
                       
-                alphaf = atan2(obj.States(5, i) + lr*obj.States(6, i), obj.States(4, i)) - obj.U(2, i);
+                alphaf = atan2(obj.States(5, i) + lr*obj.States(6, i), obj.States(4, i)) - obj.delta(i);
                 alphar = atan2(obj.States(5, i) - lf*obj.States(6, i), obj.States(4, i));
                 
                 %%%   INPUT VECTOR for f, A, B %%%%%
                 %    C,Flong,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy
                 C = car.C;
-                Flong = obj.U(1, i);
+                Flong = obj.F_long(i);
                 Fz_f = Fz_f;
                 Fz_r = Fz_r;
                 Iz = car.Iz;
                 R = R;
-                delta = obj.U(2, i);
+                delta = obj.delta(i);
                 lf = lf;
                 lr = lr;
                 m = car.mass;
@@ -124,7 +132,7 @@ classdef MPC < handle
             end
         end
         
-        function cost = cost(obj,inVec)
+        function cost = cost(obj,opt)
             % weights
             qc = 1;
             ql = 1;
@@ -138,11 +146,11 @@ classdef MPC < handle
             varsPerIter = 3;
             
             % inVec = [theta, F_long_1, delta_1, v_1, F_long_2, delta_2, v_2, ...
-            lenInVec = length(inVec);
-            theta = inVec(1);
-            F_long = inVec(2:varsPerIter:lenInVec-2);
-            delta = inVec(3:varsPerIter:lenInVec-1);
-            v = inVec(4:varsPerIter:lenInVec);
+            lenInVec = length(opt);
+            theta = opt(1);
+            F_long_opt = opt(2:varsPerIter:lenInVec-2);
+            delta_opt = opt(3:varsPerIter:lenInVec-1);
+            v_opt = opt(4:varsPerIter:lenInVec);
             
             
             % these dont need to be outputed during optimization, they can
@@ -153,27 +161,59 @@ classdef MPC < handle
             StatesTemp(:,1) = obj.States(1);
             
             
-            cost = gamma*obj.Ts*v(1);  
+            cost = gamma*obj.Ts*v_opt(1);  
             for k = 2:obj.N
                 % step theta forward in time
-                thetaTemp(k) = thetaTemp(k-1) + v(k)*obj.Ts;
+                thetaTemp(k) = thetaTemp(k-1) + v_opt(k)*obj.Ts;
                 
                 % step the states forward in time
                 StatesTemp(:,k) = StatesTemp(:,k-1)  ...
                     + obj.Ts*(obj.A(:,:,k-1)*(StatesTemp(:,k-1)-obj.States(:,k-1)) ...
-                    + obj.B(:,:,k-1)*([F_long(k-1),delta(k-1)] - obj.U(:,k-1)) + obj.f(:,k-1));
+                    + obj.B(:,:,k-1)*([F_long_opt(k-1),delta_opt(k-1)]' - [obj.F_long(k-1), obj.delta(k-1)]' ) + obj.f(:,k-1));
                 
                 % add the next term in the cost function
                 cost = cost ...
-                    + ql*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)]'*obj.Gamma_el(:,:,k)*[StatesTemp(1,k), StatesTemp(2,k), thetaTemp(k)] ...
-                    + ql*obj.C_el(k)*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)] ...
-                    + qc*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)]'*obj.Gamma_ec(:,:,k)*[StatesTemp(1,k), StatesTemp(2,k), thetaTemp(k)] ...
-                    + qc*obj.C_ec(k)*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)] ...
-                    - gamma*v(k)*obj.Ts ...
-                    + [F_long(k)-F_long(k-1); delta(k)-delta(k-1); v(k)-v(k-1)]'*R*[F_long(k)-F_long(k-1); delta(k)-delta(k-1); v(k)-v(k-1)];
+                    + ql*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)]'*obj.Gamma_el(:,:,k)*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)] ...
+                    + ql*obj.C_el(:,k)*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)] ...
+                    + qc*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)]'*obj.Gamma_ec(:,:,k)*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)] ...
+                    + qc*obj.C_ec(:,k)*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)] ...
+                    - gamma*v_opt(k)*obj.Ts ...
+                    + [F_long_opt(k)-F_long_opt(k-1); delta_opt(k)-delta_opt(k-1); v_opt(k)-v_opt(k-1)]'*R*[F_long_opt(k)-F_long_opt(k-1); delta_opt(k)-delta_opt(k-1); v_opt(k)-v_opt(k-1)];
                 
             end
         end
+        
+        function [] = setStates(obj,opt)
+            % inVec = [theta, F_long_1, delta_1, v_1, F_long_2, delta_2, v_2, ...
+            lenInVec = length(opt);
+            theta = opt(1);
+            F_long_opt = opt(2:varsPerIter:lenInVec-2);
+            delta_opt = opt(3:varsPerIter:lenInVec-1);
+            v_opt = opt(4:varsPerIter:lenInVec);
+            
+            thetaTemp = zeros(1,obj.N);
+            StatesTemp = zeros(6,obj.N);
+            thetaTemp(1) = theta;
+            StatesTemp(:,1) = obj.States(1);
+            for k = 2:obj.N
+                % step theta forward in time
+                thetaTemp(k) = thetaTemp(k-1) + v_opt(k)*obj.Ts;
+                
+                % step the states forward in time
+                StatesTemp(:,k) = StatesTemp(:,k-1)  ...
+                    + obj.Ts*(obj.A(:,:,k-1)*(StatesTemp(:,k-1)-obj.States(:,k-1)) ...
+                    + obj.B(:,:,k-1)*([F_long_opt(k-1),delta_opt(k-1)] - [obj.F_long(k-1), obj.delta(k-1)] ) + obj.f(:,k-1));
+            end
+            
+            obj.States = StatesTemp;
+            obj.thetaA = thetaTemp;
+            obj.F_long = F_long_opt;
+            obj.delta  = delta_opt;
+            obj.v      = v_opt;
+            
+        end
+            
+            
         
         function [Aineq, Bineq] = getIneqCons(obj, car)
             N1 = obj.N;
