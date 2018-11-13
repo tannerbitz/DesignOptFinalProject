@@ -30,14 +30,14 @@ classdef RaceTrack < handle
             else
                 theta_out = theta_in;
             end
-                
-            indStart = find(obj.theta<= theta_in);
-            indStart = indStart(end);
-            indEnd = find(obj.theta >= theta_in)
-            indEnd = indStart(end);
             
-            X_out = interp1(obj.theta(ind), obj.X(ind),theta_out);
-            Y_out = interp1(obj.theta(ind), obj.Y(ind),theta_out);
+            iStart = find(obj.theta <= theta_in(1));
+            iStart = iStart(end);
+            iEnd = find(obj.theta >= theta_in(end));
+            iEnd = iEnd(1);
+            
+            X_out = interp1(obj.theta(iStart:iEnd), obj.X(iStart:iEnd),theta_out);
+            Y_out = interp1(obj.theta(iStart:iEnd), obj.Y(iStart:iEnd),theta_out);
         end
         
         function [ax,bx,cx,dx,ay,by,cy,dy] = getCubicPolynomial(obj,theta_in,X_in,Y_in)
