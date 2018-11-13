@@ -31,10 +31,10 @@ classdef MPC < handle
             obj.States =  zeros(6,N); %[car.X, car.Y, car.phi, car.vx, car.vy, car.omegaB]';
             obj.States(1,:) = X0;
             obj.States(2,:) = Y0;
-            obj.F_long      =  zeros(1,N); %[car.F_long, car.delta]';
-            obj.delta       =  zeros(1,N); %[car.F_long, car.delta]';
+            obj.F_long      = ones(1,N); %[car.F_long, car.delta]';
+            obj.delta       = ones(1,N); %[car.F_long, car.delta]';
             obj.thetaA      = linspace(0,5,N);
-            obj.v           = zeros(1,N); 
+            obj.v           = ones(1,N); 
             
             
         end
@@ -108,6 +108,13 @@ classdef MPC < handle
                 varphi = obj.States(3, i);
                 vx = obj.States(4, i);
                 vy = obj.States(5, i);
+                
+                if abs(vx) < 10^-8
+                    vx = 10^-8;
+                end
+                if abs(vy) < 10^-8
+                    vy = 10^-8;
+                end
                 
                 if (abs(alphaf) < alphaFMax  && abs(alphar) < alphaRMax) % front grip, rear grip
                     obj.f(:,i) = statesdot_fgrg(C,Flong,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
@@ -184,6 +191,7 @@ classdef MPC < handle
         end
         
         function [] = setStates(obj,opt)
+            varsPerIter = 3;
             % inVec = [theta, F_long_1, delta_1, v_1, F_long_2, delta_2, v_2, ...
             lenInVec = length(opt);
             theta = opt(1);
@@ -202,7 +210,7 @@ classdef MPC < handle
                 % step the states forward in time
                 StatesTemp(:,k) = StatesTemp(:,k-1)  ...
                     + obj.Ts*(obj.A(:,:,k-1)*(StatesTemp(:,k-1)-obj.States(:,k-1)) ...
-                    + obj.B(:,:,k-1)*([F_long_opt(k-1),delta_opt(k-1)] - [obj.F_long(k-1), obj.delta(k-1)] ) + obj.f(:,k-1));
+                    + obj.B(:,:,k-1)*([F_long_opt(k-1),delta_opt(k-1)]' - [obj.F_long(k-1)', obj.delta(k-1)]' ) + obj.f(:,k-1));
             end
             
             obj.States = StatesTemp;

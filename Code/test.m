@@ -1,8 +1,8 @@
 close all; clear all;
 
-endTime = 20;
+endTime = 1;
 Ts = .1;
-N = 40;      % horizon length
+N = 5;      % horizon length
 inputFile = 'track1.txt';
 width = 12;
 
@@ -40,7 +40,7 @@ lapCount = 0;
 
 [A, B] = mpc.getIneqCons(car);
 
-for n = 1:1 %length(time1)
+for n = 1:length(time1)
     t = time1(n);
     
     
