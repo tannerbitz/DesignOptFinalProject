@@ -12,10 +12,10 @@ classdef MPC < handle
         thetaA    % (1xN) [thetaA]
         F_long    % (1xN) [Flong]
         delta     % (1xN) [delta]
-        v         % (1xN) [v]
+        v         % 
         
         
-        Ts        % sampling period
+        Ts
         N         % Horizon length
         
     end
@@ -169,7 +169,7 @@ classdef MPC < handle
                 % step the states forward in time
                 StatesTemp(:,k) = StatesTemp(:,k-1)  ...
                     + obj.Ts*(obj.A(:,:,k-1)*(StatesTemp(:,k-1)-obj.States(:,k-1)) ...
-                    + obj.B(:,:,k-1)*([F_long_opt(k-1),delta_opt(k-1)]' - [obj.F_long(k-1), obj.delta(k-1)]' ) + obj.f(:,k-1));
+                    + obj.B(:,:,k-1)*([F_long_opt(k-1),delta_opt(k-1)] - [obj.F_long(k-1), obj.delta(k-1)] ) + obj.f(:,k-1));
                 
                 % add the next term in the cost function
                 cost = cost ...
@@ -208,8 +208,8 @@ classdef MPC < handle
             obj.States = StatesTemp;
             obj.thetaA = thetaTemp;
             obj.F_long = F_long_opt;
-            obj.delta  = delta_opt;
-            obj.v      = v_opt;
+            obj.delta = delta_opt;
+            obj.v     = v_opt
             
         end
             

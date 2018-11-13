@@ -51,11 +51,18 @@ for n = 1:1 %length(time1)
     [ax,bx,cx,dx,ay,by,cy,dy] = rt.getCubicPolynomial(theta1,X1,Y1);
     
 
-    %linearize prediction and error models
+    %linearize prediction and error models 
     mpc.linearize(car, ax, ay, bx, by, cx, cy, dx, dy)
-    
+   
     % solve optimization problem for control inputs
-    fmincon(@mpc.cost, x0, A, B);
+    opt0 = zeros(1+mpc.N*3,1);
+    opt0(1) = mpc.thetaA(1);
+    opt0(2:3:end) = mpc.F_long;
+    opt0(3:3:end) = mpc.delta;
+    opt0(4:3:end) = mpc.v;
+    opt = fmincon(@mpc.cost, opt0, A, B);
+    mpc.setStates(opt);
+    
     
     % update simulation model states using ode45
     car.update(Ts,delta*pi/180,F_long);
