@@ -37,8 +37,10 @@ B = [diff(statesdot, Flong), ...
      diff(statesdot, delta)];
 
 
-matlabFunction(A, 'File', 'A_fnsrns');
-matlabFunction(B, 'File', 'B_fnsrns');
+matlabFunction(A, 'File', 'A_fgrg');
+matlabFunction(B, 'File', 'B_fgrg');
+matlabFunction(statesdot, 'File', 'statesdot_fgrg');
+
 
 %% front slip, rear no slip
 Flat_f = -sign(alphaf)*mu*Fz_f;
@@ -71,8 +73,9 @@ B = [diff(statesdot, Flong), ...
      diff(statesdot, delta)];
 
 
-matlabFunction(A, 'File', 'A_fsrns');
-matlabFunction(B, 'File', 'B_fsrns');
+matlabFunction(A, 'File', 'A_fsrg');
+matlabFunction(B, 'File', 'B_fsrg');
+matlabFunction(statesdot, 'File', 'statesdot_fsrg');
 
 %% front no slip, rear slip
 Flat_f = -falphaf + (2 - R)/(3*mu*Fz_f)*sqrt(falphaf.^2) - (1 - 2/3*R)/(3*mu*Fz_f)^2 * falphaf^3;
@@ -104,8 +107,9 @@ B = [diff(statesdot, Flong), ...
      diff(statesdot, delta)];
 
 
-matlabFunction(A, 'File', 'A_fnsrs');
-matlabFunction(B, 'File', 'B_fnsrs');
+matlabFunction(A, 'File', 'A_fgrs');
+matlabFunction(B, 'File', 'B_fgrs');
+matlabFunction(statesdot, 'File', 'statesdot_fgrs');
 
 
 %% front slip, rear slip
@@ -141,6 +145,8 @@ B = [diff(statesdot, Flong), ...
 
 matlabFunction(A, 'File', 'A_fsrs');
 matlabFunction(B, 'File', 'B_fsrs');
+matlabFunction(statesdot, 'File', 'statesdot_fsrs');
+
 
 
 
