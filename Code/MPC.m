@@ -31,8 +31,8 @@ classdef MPC < handle
             obj.States =  zeros(6,N); %[car.X, car.Y, car.phi, car.vx, car.vy, car.omegaB]';
             obj.States(1,:) = X0;
             obj.States(2,:) = Y0;
-            obj.F_long      = ones(1,N); %[car.F_long, car.delta]';
-            obj.delta       = ones(1,N); %[car.F_long, car.delta]';
+            obj.F_long      = 100*ones(1,N); %[car.F_long, car.delta]';
+            obj.delta       = zeros(1,N); %[car.F_long, car.delta]';
             obj.thetaA      = linspace(0,5,N);
             obj.v           = ones(1,N); 
             
@@ -141,9 +141,9 @@ classdef MPC < handle
         
         function cost = cost(obj,opt)
             % weights
-            qc = 1;
-            ql = 1;
-            gamma = 1;
+            qc = .01;
+            ql = 100;
+            gamma = 100;
             ru1 = 1;
             ru2 = 1;
             rv = 1;

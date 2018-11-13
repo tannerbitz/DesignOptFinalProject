@@ -1,7 +1,7 @@
 close all; clear all;
 
 endTime = 10;
-Ts = .1;
+Ts = .05;
 N = 5;      % horizon length
 inputFile = 'track1.txt';
 width = 12;
@@ -33,9 +33,6 @@ omegaB_hist = [];
 F_long_hist = [];
 delta_hist  = [];
 
-F_long = 1000;
-delta = 10;
-
 lapCount = 0;
 
 [A, B] = mpc.getIneqCons(car);
@@ -65,7 +62,7 @@ for n = 1:length(time1)
     
     
     % update simulation model states using ode45
-    car.update(Ts,delta*pi/180,F_long);
+    car.update(Ts,mpc.delta(1),mpc.F_long(1)/2);
     car.plotCar();
 
     % set the new linearization states for the MPC controller
@@ -79,8 +76,8 @@ for n = 1:length(time1)
     vx_hist = [vx_hist car.vx];
     vy_hist = [vy_hist car.vy];
     omegaB_hist = [omegaB_hist car.omegaB];
-    F_long_hist = [F_long_hist F_long];
-    delta_hist  = [delta_hist delta];
+    F_long_hist = [F_long_hist mpc.F_long(1)];
+    delta_hist  = [delta_hist mpc.delta(1)];
 
 end
 
