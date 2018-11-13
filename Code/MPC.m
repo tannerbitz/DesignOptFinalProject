@@ -99,7 +99,7 @@ classdef MPC < handle
                 Fz_r = Fz_r;
                 Iz = car.Iz;
                 R = R;
-                delta = obj.delta(i);
+                delta_in = obj.delta(i);
                 lf = lf;
                 lr = lr;
                 m = car.mass;
@@ -110,24 +110,24 @@ classdef MPC < handle
                 vy = obj.States(5, i);
                 
                 if (abs(alphaf) < alphaFMax  && abs(alphar) < alphaRMax) % front grip, rear grip
-                    obj.f(:,i) = statesdot_fgrg(C,Flong,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy);
-                    obj.A(:,:,i) = A_fgrg(C,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy);
-                    obj.B(:,:,i) = B_fgrg(C,Flong,Fz_f,Iz,R,delta,lf,lr,m,mu,omegaB,vx,vy);
+                    obj.f(:,i) = statesdot_fgrg(C,Flong,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    obj.A(:,:,i) = A_fgrg(C,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    obj.B(:,:,i) = B_fgrg(C,Flong,Fz_f,Iz,R,delta_in,lf,lr,m,mu,omegaB,vx,vy);
                     
                 elseif (abs(alphaf) >= alphaFMax && abs(alphar) < alphaRMax) % front slip, rear grip
-                    obj.f(:,i) = statesdot_fsrg(C,Flong,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy);
-                    obj.A(:,:,i) = A_fsrg(C,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy);
-                    obj.B(:,:,i) = B_fsrg(Flong,Fz_f,Iz,delta,lf,lr,m,mu,omegaB,vx,vy);
+                    obj.f(:,i) = statesdot_fsrg(C,Flong,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    obj.A(:,:,i) = A_fsrg(C,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    obj.B(:,:,i) = B_fsrg(Flong,Fz_f,Iz,delta_in,lf,lr,m,mu,omegaB,vx,vy);
                     
                 elseif (abs(alphaf) < alphaFMax && abs(alphar) >= alphaRMax) % front grip, rear slip
-                    obj.f(:,i) = statesdot_fgrs(C,Flong,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy);
-                    obj.A(:,:,i) = A_fgrs(C,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy);
-                    obj.B(:,:,i) = B_fgrs(C,Flong,Fz_f,Iz,R,delta,lf,lr,m,mu,omegaB,vx,vy);
+                    obj.f(:,i) = statesdot_fgrs(C,Flong,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    obj.A(:,:,i) = A_fgrs(C,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    obj.B(:,:,i) = B_fgrs(C,Flong,Fz_f,Iz,R,delta_in,lf,lr,m,mu,omegaB,vx,vy);
                     
                 elseif (abs(alphaf) >= alphaFMax && abs(alphar) >= alphaRMax) % front slip, rear slip
-                    obj.f(:,i) = statesdot_fsrs(Flong,Fz_f,Fz_r,Iz,delta,lf,lr,m,mu,omegaB,varphi,vx,vy);
-                    obj.A(:,:,i) = A_fsrs(Fz_f,Fz_r,Iz,delta,lf,lr,m,mu,omegaB,varphi,vx,vy);
-                    obj.B(:,:,i) = B_fsrs(Flong,Fz_f,Iz,delta,lf,lr,m,mu,omegaB,vx,vy);
+                    obj.f(:,i) = statesdot_fsrs(Flong,Fz_f,Fz_r,Iz,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    obj.A(:,:,i) = A_fsrs(Fz_f,Fz_r,Iz,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    obj.B(:,:,i) = B_fsrs(Flong,Fz_f,Iz,delta_in,lf,lr,m,mu,omegaB,vx,vy);
                 end
             end
         end
