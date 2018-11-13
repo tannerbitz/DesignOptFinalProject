@@ -58,9 +58,25 @@ end
 figure
 plot(time1,vx);
 hold on
+<<<<<<< HEAD
 plot(time1,vy);
 plot(time1,T);
 
 legend('vx', 'vy')
+=======
+
+start = 100;
+ind = start:40:start+121;
+aL = rt.arcLen(ind);
+x = rt.X(ind);
+y = rt.Y(ind);
+
+aLL = aL(1):.1:aL(end); 
+fx = spline(aL,x);
+fy = spline(aL,y);
+figure(1)
+% plot(x,y,'o',xx,yy,'linewidth',5)
+
+>>>>>>> 19d55048f95b0880e1a2677a65c72f39ba2f840d
 
 
