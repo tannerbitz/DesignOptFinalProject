@@ -28,13 +28,13 @@ classdef MPC < handle
            % set initial states to current sim states
            obj.States(:,1) = States;  
            
-            % shift states by one sampling period
+           % shift states by one sampling period
            for i = 2:N1-1
-              obj.States(:,i) = obj.States(:,i+1);  
+               obj.States(:,i) = obj.States(:,i+1);
            end
            
-           % compute last state 
-           obj.States(:,N1) = obj.States(:,N1) + obj.Ts*obj.f(:,N1); 
+           % compute last state
+           obj.States(:,N1) = obj.States(:,N1) + obj.Ts*obj.f(:,N1);
            
        end
        
@@ -42,13 +42,12 @@ classdef MPC < handle
            
            N1 = obj.N;
            for i = 1:N1
-           obj.fn(:,i) = 
-           obj.A(:,:,i) =
-           obj.B(:,:,i) = 
-           
+               obj.fn(:,i) =
+               obj.A(:,:,i) =
+               obj.B(:,:,i) =    
            end
        end
-      
+       
        function cost = cost(obj,inVec)
            
        end
