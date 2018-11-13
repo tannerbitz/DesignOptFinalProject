@@ -14,6 +14,10 @@ classdef SimModel < handle
         C         % tire stiffness
         F_long_accel   % max (positive) acceleration force on each wheel (N)
         F_long_brake   % max (negative) braking force on each wheel (N)
+        delta_max      % max steering angle
+        delta_min      % min steering angle
+        v_max          % max velocity
+        v_min          % min velocity
         refA      % aerodynamics reference area
         Cd        % drag coefficient
         rhoAir    % density of air

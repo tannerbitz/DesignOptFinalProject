@@ -37,6 +37,9 @@ F_long = 1000;
 delta = 10;
 
 lapCount = 0;
+
+[A, B] = mpc.getIneqCons(car);
+
 for n = 1:1 %length(time1)
     t = time1(n);
     
@@ -52,7 +55,7 @@ for n = 1:1 %length(time1)
     mpc.linearize(car, ax, ay, bx, by, cx, cy, dx, dy)
     
     % solve optimization problem for control inputs
-    
+    fmincon(@mpc.cost, x0, A, B);
     
     % update simulation model states using ode45
     car.update(Ts,delta*pi/180,F_long);

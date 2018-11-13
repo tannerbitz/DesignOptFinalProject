@@ -15,6 +15,10 @@ car.mu_k   = 0.8;                                             % static road/tire
 car.C      = 120000;                                          % tire stiffness   (N/rad)
 car.F_long_accel   = 1000;                                    % max (positive) acceleration force on each wheel (N)
 car.F_long_brake   = -2700;                                   % max (negative) braking force on each wheel (N)
+car.delta_max = 45*pi/180;
+car.delta_min = -45*pi/180;
+car.v_max = 150;
+car.v_min = 0;
 
 car.refA   = 50.6*77.8*.0254^2;                               % aero reference area (m^2)
 car.Cd     = .27;                                             % drag coefficient

@@ -135,21 +135,22 @@ classdef MPC < handle
             R = [ru1, 0 , 0;
                 0, ru2, 0;
                 0, 0, rv];
+            varsPerIter = 3;
             
             % inVec = [theta, F_long_1, delta_1, v_1, F_long_2, delta_2, v_2, ...
             lenInVec = length(inVec);
             theta = inVec(1);
-            F_long = inVec(2:4:lenInVec-2);
-            delta = inVec(3:4:lenInVec-1);
-            v = inVec(4:4:lenInVec);
-              
+            F_long = inVec(2:varsPerIter:lenInVec-2);
+            delta = inVec(3:varsPerIter:lenInVec-1);
+            v = inVec(4:varsPerIter:lenInVec);
+            
             
             % these dont need to be outputed during optimization, they can
             % be computed and stored from the other opt variables after its all done
             thetaTemp = zeros(1,obj.N);
             StatesTemp = zeros(6,obj.N);
             thetaTemp(1) = theta;
-            StatesTemp(1) = obj.States(1);
+            StatesTemp(:,1) = obj.States(1);
             
             
             cost = gamma*obj.Ts*v(1);  
@@ -173,5 +174,46 @@ classdef MPC < handle
                 
             end
         end
+        
+        function [Aineq, Bineq] = getIneqCons(obj, car)
+            N1 = obj.N;
+            nVarsPerIter = 3;
+            nOptVars = 1+nVarsPerIter*N1;
+            Aineq = [];
+            Bineq = [];
+            % Flong constraints
+            for i = 2:nVarsPerIter:nOptVars
+                temp1 = zeros(1, nOptVars);
+                temp2 = zeros(1, nOptVars);
+                temp1(i) = 1;
+                temp2(i) = -1;
+                i
+                size(temp1)
+                Aineq = [Aineq; temp1; temp2];
+                Bineq = [Bineq; car.F_long_accel; -car.F_long_brake];
+            end
+            
+            % delta constraints
+            for i = 3:nVarsPerIter:nOptVars
+                temp1 = zeros(1, nOptVars);
+                temp2 = zeros(1, nOptVars);
+                temp1(i) = 1;
+                temp2(i) = -1;
+                Aineq = [Aineq; temp1; temp2];
+                Bineq = [Bineq; car.delta_max; -car.delta_min];
+            end
+            
+            % v constraints
+            for i = 4:nVarsPerIter:nOptVars
+                temp1 = zeros(1, nOptVars);
+                temp2 = zeros(1, nOptVars);
+                temp1(i) = 1;
+                temp2(i) = -1;
+                Aineq = [Aineq; temp1; temp2];
+                Bineq = [Bineq; car.v_max; -car.v_min];
+            end
+            
+        end
+        
     end
 end
