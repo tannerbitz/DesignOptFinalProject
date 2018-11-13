@@ -187,8 +187,6 @@ classdef MPC < handle
                 temp2 = zeros(1, nOptVars);
                 temp1(i) = 1;
                 temp2(i) = -1;
-                i
-                size(temp1)
                 Aineq = [Aineq; temp1; temp2];
                 Bineq = [Bineq; car.F_long_accel; -car.F_long_brake];
             end
