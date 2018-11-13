@@ -1,15 +1,14 @@
 classdef RaceTrack < handle
     properties
         controlPoints  % racetrack control points loaded from file
-        arcLen         % race track arc length corresponding to progress variable
-        X              % x coordinate corresponding to progress variable
-        Y              % y coordinate correspinding to progress variable
+        theta          % arc lengths along track at corresponding XY
+        X              % x coordinates
+        Y              % y coordinates
         width          % track width
         Xout           % outer edge x coordinate
         Yout           % outer edge y coordinate
         Xin            % inner edge x coordinate
         Yin            % inner edge y coordinate
-
     end
 
     methods
@@ -18,6 +17,10 @@ classdef RaceTrack < handle
             obj.width = width_in;
             obj.controlPoints = importdata(inputFile);
 
+        end
+        
+        function [X,Y] = getXY(theta)
+            
         end
 
         function obj = computeRaceTrack(obj)
@@ -41,20 +44,20 @@ classdef RaceTrack < handle
 
 
             % compute length of each linear segment of track
-            arcLen1 = zeros(size(p_spl,1),1);
+            theta1 = zeros(size(p_spl,1),1);
             for i = 2:size(p_spl,1)
-                arcLen1(i) = sqrt((p_spl(i-1,1)-p_spl(i,1))^2 + (p_spl(i-1,2)-p_spl(i,2))^2) + arcLen1(i-1);
+                theta1(i) = sqrt((p_spl(i-1,1)-p_spl(i,1))^2 + (p_spl(i-1,2)-p_spl(i,2))^2) + theta1(i-1);
             end
 
 
             % The sefments of the b-spline track are not equal arc length, so we
             % intperolate it onto a unifrom arc length vector
             N = 1000;
-            arcLenMin = min(arcLen1);
-            arcLenMax = max(arcLen1);
-            obj.arcLen = linspace(arcLenMin,arcLenMax,N);
-            obj.X = interp1(arcLen1,p_spl(:,1),obj.arcLen);
-            obj.Y = interp1(arcLen1,p_spl(:,2),obj.arcLen);
+            thetaMin = min(theta1);
+            thetaMax = max(theta1);
+            obj.theta = linspace(thetaMin,thetaMax,N);
+            obj.X = interp1(theta1,p_spl(:,1),obj.theta);
+            obj.Y = interp1(theta1,p_spl(:,2),obj.theta);
 
             % compute track edge locations
             for i = 1:N
