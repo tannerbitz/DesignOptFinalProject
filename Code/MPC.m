@@ -41,8 +41,8 @@ classdef MPC < handle
        
        function [] = linearize(obj, car)
             
-            Fz_f = .5*car.mass*9.81*car.dm - car.Fx*car.hcg/car.length - car.Fy*car.hcg/car.width;
-            Fz_r = .5*car.mass*9.81*car.dm - car.Fx*car.hcg/car.length + car.Fy*car.hcg/car.width;
+            Fz_f = car.mass*9.81*car.dm;
+            Fz_r = car.mass*9.81*(1-car.dm);
 
             N1 = obj.N;
             for i = 1:N1
@@ -70,6 +70,9 @@ classdef MPC < handle
                 varphi_in = obj.States(3, i);
                 vx_in = obj.States(4, i);
                 vy_in = obj.States(5, i);
+                
+                inputs = cell(15,1);
+                inputs{i} = 
                
                 if (abs(alphaf) < alphaFMax  && abs(alphar) < alphaRMax) % front grip, rear grip
                     obj.fn(:,i) = statesdot_fgrg(C_in, ...
