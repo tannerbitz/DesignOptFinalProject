@@ -16,6 +16,8 @@ classdef MPC < handle
    
    methods
        function obj = MPC(~,Ts)
+           addpath ./TaylorEqs/;
+           
            obj.Ts = Ts;
        end
        
@@ -39,7 +41,6 @@ classdef MPC < handle
        end
        
        function [] = linearize(obj)
-           
            N1 = obj.N;
            for i = 1:N1
                obj.fn(:,i) =
