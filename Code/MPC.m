@@ -21,10 +21,6 @@ classdef MPC < handle
            obj.Ts = Ts;
        end
        
-       function RHS = getRHS(obj,States, F_long, delta)
-           
-       end
-       
        function [] = setStates(obj,States, uN)
            N1 = obj.N;
            % set initial states to current sim states
@@ -40,12 +36,24 @@ classdef MPC < handle
            
        end
        
-       function [] = linearize(obj)
+       function [] = linearize(obj, car)
+           
            N1 = obj.N;
            for i = 1:N1
-               obj.fn(:,i) =
-               obj.A(:,:,i) =
+               obj.Gamma_el =
+               
+               if alphaf < tan  & alphar <tan
+               obj.fn(:,i) = 
+               obj.A(:,:,i) =   f_fgrg(car.mass
                obj.B(:,:,i) =    
+               
+               
+               elseif
+                   
+                   
+               elseif
+                   
+               else
            end
        end
        
