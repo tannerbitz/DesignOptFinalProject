@@ -1,14 +1,16 @@
 close all; clear all;
 inputFile = 'track1.txt';
-width = 12;
+width = 15;
 rt = RaceTrack(inputFile,width);
 rt.computeRaceTrack();
 
 car = car1();
+car.X = rt.X(1);
+car.Y = rt.Y(1);
 car.plotCar()
 
-dt = .1;
-time1 = 0:dt:10;
+dt = .2;
+time1 = 0:dt:20;
 
 X = [];
 Y = [];
@@ -21,13 +23,27 @@ omegaW_fr = [];
 omegaW_rl = [];
 omegaW_rr = [];
 
-torque = 2000;
+force = 500/2;
+delta = -1;
+
+T = [];
 for n = 1:length(time1)
     t = time1(n);
-    if  t > 5
-        torque = .000;
+    T = [T ];
+    if mod(100,n)
+        t
     end
-    car.update(dt,5*pi/180,torque);
+    t = time1(n);
+        if  t > 7
+            delta = 1;
+            force = 1000/2;
+        elseif t > 5
+            delta = -2;
+            force = 500/2;
+        end
+    tic
+    car.update(dt,delta*pi/180,force);
+    T = [T toc];
     car.plotCar();
     
     X = [X car.X];
@@ -43,7 +59,8 @@ figure
 plot(time1,vx);
 hold on
 plot(time1,vy);
+plot(time1,T);
 
-legend('vx',  'vy')
+legend('vx', 'vy')
 
 

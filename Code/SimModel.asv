@@ -141,7 +141,7 @@ classdef SimModel < handle
             end
             
             % Calculate lat and long tire forces
-            F_long = max(abs(sigmaLong/(sigma+eps)*Ft), abs(torque_in/obj.wr));
+            F_long = sigmaLong/(sigma+eps)*Ft;
             F_lat = sigmaLat/(sigma+eps)*Ft;
             
         end
@@ -170,7 +170,7 @@ classdef SimModel < handle
 
         function [] = plotCar(obj)
             deltax1 = [obj.length/2, -obj.length/2, -obj.length/2, obj.length/2, obj.length/2+obj.length/4];
-            deltay1 = [obj.width/2, obj.width/2, -obj.width/2, -obj.width/2];
+            deltay1 = [obj.width/2, obj.width/2, -obj.width/2, -obj.width/2, 0];
             
             deltax = cos(obj.phi)*deltax1 - sin(obj.phi)*deltay1;
             deltay = sin(obj.phi)*deltax1 + cos(obj.phi)*deltay1;
@@ -178,7 +178,7 @@ classdef SimModel < handle
             x = obj.X + deltax;
             y = obj.Y + deltay;
             
-            patch(x,y,'b')
+            patch(x,y,sqrt(obj.vx^2 + obj.vy^2))
         end
         
         
