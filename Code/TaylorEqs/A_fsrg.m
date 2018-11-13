@@ -1,10 +1,58 @@
 function A = A_fsrg(C,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy)
-A = [ 0, 0, - vy*cos(varphi) - vx*sin(varphi),                                                                                                                                                                                                                                                                                                                                                                                                                              cos(varphi),                                                                                                                                                                                                                                                                                                                                                                                     -sin(varphi),                                                                                                                                                                                                                                                                                                                                                                                                           0;
-      0, 0,   vx*cos(varphi) - vy*sin(varphi),                                                                                                                                                                                                                                                                                                                                                                                                                              sin(varphi),                                                                                                                                                                                                                                                                                                                                                                                      cos(varphi),                                                                                                                                                                                                                                                                                                                                                                                                           0;
-      0, 0,                                 0,                                                                                                                                                                                                                                                                                                                                                                                                                                        0,                                                                                                                                                                                                                                                                                                                                                                                                0,                                                                                                                                                                                                                                                                                                                                                                                                           1;
-      0, 0,                                 0,                                                                                                                                                                                                                                                                 -(2*Fz_f*mu*dirac(atan((vy + lr*omegaB)/(vx + 1/100000000)) - delta)*sin(delta)*(vy + lr*omegaB))/(m*((vy + lr*omegaB)^2/(vx + 1/100000000)^2 + 1)*(vx + 1/100000000)^2),                                                                                                                                                                                                                                (m*omegaB + (2*Fz_f*mu*dirac(atan((vy + lr*omegaB)/(vx + 1/100000000)) - delta)*sin(delta))/(((vy + lr*omegaB)^2/(vx + 1/100000000)^2 + 1)*(vx + 1/100000000)))/m,                                                                                                                                                                                                                                            (m*vy + (2*Fz_f*lr*mu*dirac(atan((vy + lr*omegaB)/(vx + 1/100000000)) - delta)*sin(delta))/(((vy + lr*omegaB)^2/(vx + 1/100000000)^2 + 1)*(vx + 1/100000000)))/m;
-      0, 0,                                 0, ((C*(vy - lf*omegaB))/(vx + 1/100000000)^2 - m*omegaB - (C^3*((2*R)/3 - 1)*(vy - lf*omegaB)^3)/(3*Fz_r^2*mu^2*(vx + 1/100000000)^4) + (2*Fz_f*mu*dirac(atan((vy + lr*omegaB)/(vx + 1/100000000)) - delta)*cos(delta)*(vy + lr*omegaB))/(((vy + lr*omegaB)^2/(vx + 1/100000000)^2 + 1)*(vx + 1/100000000)^2) + (C^2*(vy - lf*omegaB)^2*(R - 2))/(3*Fz_r*mu*(vx + 1/100000000)^3*((C^2*(vy - lf*omegaB)^2)/(vx + 1/100000000)^2)^(1/2)))/m,         -(C/(vx + 1/100000000) - (C^3*((2*R)/3 - 1)*(vy - lf*omegaB)^2)/(3*Fz_r^2*mu^2*(vx + 1/100000000)^3) + (2*Fz_f*mu*dirac(atan((vy + lr*omegaB)/(vx + 1/100000000)) - delta)*cos(delta))/(((vy + lr*omegaB)^2/(vx + 1/100000000)^2 + 1)*(vx + 1/100000000)) + (C^2*(2*vy - 2*lf*omegaB)*(R - 2))/(6*Fz_r*mu*(vx + 1/100000000)^2*((C^2*(vy - lf*omegaB)^2)/(vx + 1/100000000)^2)^(1/2)))/m,   -(m*vx - (C*lf)/(vx + 1/100000000) + (C^3*lf*((2*R)/3 - 1)*(vy - lf*omegaB)^2)/(3*Fz_r^2*mu^2*(vx + 1/100000000)^3) + (2*Fz_f*lr*mu*dirac(atan((vy + lr*omegaB)/(vx + 1/100000000)) - delta)*cos(delta))/(((vy + lr*omegaB)^2/(vx + 1/100000000)^2 + 1)*(vx + 1/100000000)) - (C^2*lf*(vy - lf*omegaB)*(R - 2))/(3*Fz_r*mu*(vx + 1/100000000)^2*((C^2*(vy - lf*omegaB)^2)/(vx + 1/100000000)^2)^(1/2)))/m;
-      0, 0,                                 0,  -(lr*((C*(vy - lf*omegaB))/(vx + 1/100000000)^2 - (C^3*((2*R)/3 - 1)*(vy - lf*omegaB)^3)/(3*Fz_r^2*mu^2*(vx + 1/100000000)^4) + (C^2*(vy - lf*omegaB)^2*(R - 2))/(3*Fz_r*mu*(vx + 1/100000000)^3*((C^2*(vy - lf*omegaB)^2)/(vx + 1/100000000)^2)^(1/2))) - (2*Fz_f*lf*mu*dirac(atan((vy + lr*omegaB)/(vx + 1/100000000)) - delta)*cos(delta)*(vy + lr*omegaB))/(((vy + lr*omegaB)^2/(vx + 1/100000000)^2 + 1)*(vx + 1/100000000)^2))/Iz, (lr*(C/(vx + 1/100000000) - (C^3*((2*R)/3 - 1)*(vy - lf*omegaB)^2)/(3*Fz_r^2*mu^2*(vx + 1/100000000)^3) + (C^2*(2*vy - 2*lf*omegaB)*(R - 2))/(6*Fz_r*mu*(vx + 1/100000000)^2*((C^2*(vy - lf*omegaB)^2)/(vx + 1/100000000)^2)^(1/2))) - (2*Fz_f*lf*mu*dirac(atan((vy + lr*omegaB)/(vx + 1/100000000)) - delta)*cos(delta))/(((vy + lr*omegaB)^2/(vx + 1/100000000)^2 + 1)*(vx + 1/100000000)))/Iz, -(lr*((C*lf)/(vx + 1/100000000) - (C^3*lf*((2*R)/3 - 1)*(vy - lf*omegaB)^2)/(3*Fz_r^2*mu^2*(vx + 1/100000000)^3) + (C^2*lf*(vy - lf*omegaB)*(R - 2))/(3*Fz_r*mu*(vx + 1/100000000)^2*((C^2*(vy - lf*omegaB)^2)/(vx + 1/100000000)^2)^(1/2))) + (2*Fz_f*lf*lr*mu*dirac(atan((vy + lr*omegaB)/(vx + 1/100000000)) - delta)*cos(delta))/(((vy + lr*omegaB)^2/(vx + 1/100000000)^2 + 1)*(vx + 1/100000000)))/Iz];
- 
+%A_FSRG
+%    A = A_FSRG(C,FZ_F,FZ_R,IZ,R,DELTA,LF,LR,M,MU,OMEGAB,VARPHI,VX,VY)
 
-end
+%    This function was generated by the Symbolic Math Toolbox version 8.1.
+%    13-Nov-2018 15:09:43
+
+vx = sign(vx)*max(1e-8, vx);
+vy = sign(vy)*max(1e-8, vy);
+
+t2 = cos(varphi);
+t3 = sin(varphi);
+t4 = lr.*omegaB;
+t5 = t4+vy;
+t6 = vx+1.0e-8;
+t7 = 1.0./t6.^2;
+t8 = 1.0./m;
+t9 = 1.0./t6;
+t10 = t5.*t9;
+t11 = atan(t10);
+t12 = -delta+t11+1.0e-8;
+t13 = dirac(t12);
+t14 = sin(delta);
+t15 = t5.^2;
+t16 = t7.*t15;
+t17 = t16+1.0;
+t18 = 1.0./t17;
+t19 = m.*omegaB;
+t21 = lf.*omegaB;
+t20 = -t21+vy;
+t24 = t9.*t20;
+t25 = atan(t24);
+t26 = t25+1.0e-8;
+t22 = tan(t26);
+t23 = C.^2;
+t27 = t22.^2;
+t28 = t20.^2;
+t29 = t7.*t28;
+t30 = t29+1.0;
+t31 = 1.0./t30;
+t32 = t27+1.0;
+t33 = cos(delta);
+t34 = 1.0./Fz_r.^2;
+t35 = 1.0./mu.^2;
+t36 = R.*(2.0./3.0);
+t37 = t36-1.0;
+t38 = 1.0./Fz_r;
+t39 = 1.0./mu;
+t40 = t23.*t27;
+t41 = 1.0./sqrt(t40);
+t42 = R-2.0;
+t43 = C.*t7.*t20.*t31.*t32;
+t44 = t7.*t20.*t22.*t23.*t31.*t32.*t38.*t39.*t41.*t42.*(1.0./3.0);
+t45 = 1.0./Iz;
+t46 = C.*t9.*t31.*t32;
+t47 = t9.*t22.*t23.*t31.*t32.*t38.*t39.*t41.*t42.*(1.0./3.0);
+t48 = C.*lf.*t9.*t23.*t27.*t31.*t32.*t34.*t35.*t37.*(1.0./3.0);
+A = reshape([0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-t3.*vx-t2.*vy,t2.*vx-t3.*vy,0.0,0.0,0.0,0.0,t2,t3,0.0,Fz_f.*mu.*t5.*t7.*t8.*t13.*t14.*t18.*-2.0,t8.*(-t19+t43+t44+Fz_f.*mu.*t5.*t7.*t13.*t18.*t33.*2.0-C.*t7.*t20.*t23.*t27.*t31.*t32.*t34.*t35.*t37.*(1.0./3.0)),-t45.*(lr.*(t43+t44-C.*t7.*t20.*t23.*t27.*t31.*t32.*t34.*t35.*t37.*(1.0./3.0))-Fz_f.*lf.*mu.*t5.*t7.*t13.*t18.*t33.*2.0),-t3,t2,0.0,t8.*(t19+Fz_f.*mu.*t9.*t13.*t14.*t18.*2.0),-t8.*(t46+t47+Fz_f.*mu.*t9.*t13.*t18.*t33.*2.0-C.*t9.*t23.*t27.*t31.*t32.*t34.*t35.*t37.*(1.0./3.0)),t45.*(lr.*(t46+t47-C.*t9.*t23.*t27.*t31.*t32.*t34.*t35.*t37.*(1.0./3.0))-Fz_f.*lf.*mu.*t9.*t13.*t18.*t33.*2.0),0.0,0.0,1.0,t8.*(m.*vy+Fz_f.*lr.*mu.*t9.*t13.*t14.*t18.*2.0),-t8.*(t48+m.*vx-C.*lf.*t9.*t31.*t32+Fz_f.*lr.*mu.*t9.*t13.*t18.*t33.*2.0-lf.*t9.*t22.*t23.*t31.*t32.*t38.*t39.*t41.*t42.*(1.0./3.0)),-t45.*(lr.*(-t48+C.*lf.*t9.*t31.*t32+lf.*t9.*t22.*t23.*t31.*t32.*t38.*t39.*t41.*t42.*(1.0./3.0))+Fz_f.*lf.*lr.*mu.*t9.*t13.*t18.*t33.*2.0)],[6,6]);

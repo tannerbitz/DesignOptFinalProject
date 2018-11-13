@@ -1,8 +1,8 @@
 syms X Y vx vy varphi omegaB theta delta lf lr R mu Fz_f Fz_r Flong m Iz C
 
 eps = 10^-8;
-alphaf = atan((vy + lr*omegaB)/(vx+eps)) - delta;
-alphar = atan((vy - lf*omegaB)/(vx+eps));
+alphaf = atan((vy + lr*omegaB)/(vx+eps)) - delta +eps;
+alphar = atan((vy - lf*omegaB)/(vx+eps)) + eps;
 
 falphaf = C*tan(alphaf);
 falphar = C*tan(alphar);
