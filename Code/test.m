@@ -44,16 +44,16 @@ plot(time1,vx);
 hold on
 
 start = 100;
-ind = start:20:start+121;
+ind = start:40:start+121;
 aL = rt.arcLen(ind);
 x = rt.X(ind);
 y = rt.Y(ind);
 
 aLL = aL(1):.1:aL(end); 
-xx = spline(aL,x,aLL);
-yy = spline(aL,y,aLL);
+fx = spline(aL,x);
+fy = spline(aL,y);
 figure(1)
-plot(x,y,'o',xx,yy,'linewidth',5)
+% plot(x,y,'o',xx,yy,'linewidth',5)
 
 
 
