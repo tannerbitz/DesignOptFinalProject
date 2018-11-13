@@ -43,15 +43,26 @@ figure
 plot(time1,vx);
 hold on
 
-start = 100;
-ind = start:20:start+121;
+
+
+start = 350;
+ind = start:10:start+101;
 aL = rt.arcLen(ind);
 x = rt.X(ind);
 y = rt.Y(ind);
 
-aLL = aL(1):.1:aL(end); 
-xx = spline(aL,x,aLL);
-yy = spline(aL,y,aLL);
+for i = 1:length(aL)
+   V(i,:) = [1 aL(i) aL(i)^2 aL(i)^3]; 
+end
+
+coef_x = inv(V'*V)*V'*x';
+coef_y = inv(V'*V)*V'*y';
+
+aLL =aL(1):.01:aL(end);
+
+xx = coef_x(1) + coef_x(2).*aLL + coef_x(3).*aLL.^2 + coef_x(4).*aLL.^3;
+yy = coef_y(1) + coef_y(2).*aLL + coef_y(3).*aLL.^2 + coef_y(4).*aLL.^3; 
+
 figure(1)
 plot(x,y,'o',xx,yy,'linewidth',5)
 
