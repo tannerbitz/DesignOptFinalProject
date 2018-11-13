@@ -109,8 +109,8 @@ classdef MPC < handle
                 vx = obj.States(4, i);
                 vy = obj.States(5, i);
                 
-                if abs(vx) < 10^-8
-                    vx = 10^-8;
+                if abs(vx) < 1 %10^-8
+                    vx = 1; % 1e-8;
                 end
                 if abs(vy) < 10^-8
                     vy = 10^-8;
@@ -165,7 +165,7 @@ classdef MPC < handle
             thetaTemp = zeros(1,obj.N);
             StatesTemp = zeros(6,obj.N);
             thetaTemp(1) = theta;
-            StatesTemp(:,1) = obj.States(1);
+            StatesTemp(:,1) = obj.States(:, 1);
             
             
             cost = gamma*obj.Ts*v_opt(1);  
@@ -229,6 +229,13 @@ classdef MPC < handle
             nOptVars = 1+nVarsPerIter*N1;
             Aineq = [];
             Bineq = [];
+            
+            % theta constraint
+            temp1 = zeros(1, nOptVars);
+            temp1(1) = -1;
+            Aineq = [Aineq; temp1];
+            Bineq = [Bineq; 0];
+            
             % Flong constraints
             for i = 2:nVarsPerIter:nOptVars
                 temp1 = zeros(1, nOptVars);

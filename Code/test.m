@@ -1,6 +1,6 @@
 close all; clear all;
 
-endTime = 1;
+endTime = 10;
 Ts = .1;
 N = 5;      % horizon length
 inputFile = 'track1.txt';
