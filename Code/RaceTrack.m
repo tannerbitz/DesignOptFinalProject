@@ -27,7 +27,7 @@ classdef RaceTrack < handle
             order = 3; % cubic polynomial
             n =  size(obj.controlPoints,1); % number of control points
 
-            % append on 4 points first 4 points, this make the track c0 and
+            % append last 4 points as first 4 points, this make the track c0 and
             % c1 continuous at 1 point
             p = obj.controlPoints;
             p(n+1,:) = p(1,:);
