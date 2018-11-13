@@ -9,7 +9,13 @@ width = 12;
 
 rt = RaceTrack(inputFile,width);
 rt.computeRaceTrack();
-car = car1();
+X0 = rt.X(1);
+Y0 = rt.Y(1);
+
+car = car1();  % intialize sim model physical properties and states
+car.X = X0;
+car.Y = Y0;
+
 mpc = MPC(Ts,N);
 
 time1 = 0:Ts:endTime;
@@ -22,8 +28,6 @@ vx = [];
 vy = [];
 omegaB = [];
 
-%initialize prediction horizon vectors
-
 
 F_long = 1000;
 delta = 10;
@@ -32,12 +36,18 @@ lapCount = 0;
 for n = 1:length(time1)
     t = time1(n);
     
-    theta1 = MPC.theta;
+    
+    % calculate cubic approximation to track over the the prediction
+    % horizon
+    theta1 = mpc.thetaA;
     [theta1,X1,Y1,lapCount] = rt.getXY(theta1,lapCount);
     [ax,bx,cx,dx,ay,by,cy,dy] = rt.getCubicPolynomial(theta1,X1,Y1);
     
     
-    % update vehicle states using ode45
+    
+    
+    
+    % update simulation model states using ode45
     car.update(Ts,delta*pi/180,F_long);
     car.plotCar();
 
@@ -55,34 +65,6 @@ for n = 1:length(time1)
 end
 
 figure
-plot(time1,vx);
+plot(time1,vx,time1,vy);
 hold on
 
-
-start = 50;
-ind = start:4:start+81;
-aL = rt.arcLen(ind);
-x = rt.X(ind);
-y = rt.Y(ind);
-
-
-aLL = aL(1):.1:aL(end); 
-xx = spline(aL,x,aLL);
-yy = spline(aL,y,aLL);
-figure(1)
-plot(x,y,'o',xx,yy,'linewidth',5)
-
-for i = 1:length(aL)
-   V(i,:) = [1 aL(i) aL(i)^2 aL(i)^3];
-end
-
-coef_x = inv(V'*V)*V'*x';
-coef_y = inv(V'*V)*V'*y';
-
-aLL =aL(1):.01:aL(end);
-
-xx = coef_x(1) + coef_x(2).*aLL + coef_x(3).*aLL.^2 + coef_x(4).*aLL.^3;
-yy = coef_y(1) + coef_y(2).*aLL + coef_y(3).*aLL.^2 + coef_y(4).*aLL.^3;
-
-figure(1)
-plot(x,y,'o',xx,yy,'linewidth',5)

@@ -21,7 +21,7 @@ classdef RaceTrack < handle
 
         end
         
-        function [theta_out,X_out,Y_out,lapCount] = getXY(theta_in, lapCount)
+        function [theta_out,X_out,Y_out,lapCount] = getXY(obj,theta_in, lapCount)
             % if we're passed the end of the track, start at the beginning
             % again
             if theta_in(1) >= obj.theta(end)
@@ -33,8 +33,8 @@ classdef RaceTrack < handle
                 
             ind = find(obj.theta >= theta_out(1) & obj.theta <= theta_out(end));
             
-            X_out = interp1(obj.theta(ind), obj.X(ind),obj.theta_out);
-            Y_out = interp1(obj.theta(ind), obj.Y(ind),obj.theta_out);
+            X_out = interp1(obj.theta(ind), obj.X(ind),theta_out);
+            Y_out = interp1(obj.theta(ind), obj.Y(ind),theta_out);
         end
         
         function [ax,bx,cx,dx,ay,by,cy,dy] = getCubicPolynomial(obj,theta_in,X_in,Y_in)
