@@ -24,7 +24,7 @@ classdef RaceTrack < handle
         function [theta_out,X_out,Y_out,lapCount] = getXY(obj,theta_in, lapCount)
             % if we're passed the end of the track, start at the beginning
             % again
-            if theta_in(1) >= obj.theta(end)
+            if theta_in(1) >= obj.theta(obj.N1)
                 theta_out = theta_in - obj.theta(end);
                 lapCount = lapCount + 1;
             else
@@ -128,7 +128,8 @@ classdef RaceTrack < handle
             obj.X = [obj.X, obj.X(2:end)];
             obj.Y = [obj.Y, obj.Y(2:end)];
             
-
+            obj.N2 = length(obj.theta);
+            
             figure
             plot(obj.X,obj.Y, 'k--')
             hold on
