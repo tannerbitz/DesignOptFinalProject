@@ -136,6 +136,24 @@ classdef RaceTrack < handle
             axis equal;
 
         end
+        
+        function [ec, el] = getErrors(X,Y,thetaA)
+            i1 = find(obj.theta <= thetaA);
+            i1 = i1(end);
+            i2 = find(obj.theta >= thetaA);
+            i2 = i2(1);
+            
+            dXdtheta = (obj.X(i2) - obj.X(i1))/(obj.theta(i2)-obj.theta(i1));
+            dYdtheta = (obj.Y(i2) - obj.Y(i1))/(obj.theta(i2)-obj.theta(i1));
+            
+            XA = obj.X(i1) + dXdtheta*(thetaA - obj.theta(i1));
+            YA = obj.Y(i1) + dYdtheta*(thetaA - obj.theta(i1));
+            
+            Phi = atan(dYdtheta/dXdtheta);
+            
+            ec = sin(Phi)*(X-XA) - cos(Phi)*(Y-YA);
+            el = -cos(Phi)*(X-XA) - sin(Phi)*(Y-YA); 
+        end
 
         function val = DEBOOR(obj,T,p,y,order)
 
