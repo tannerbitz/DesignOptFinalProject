@@ -135,12 +135,17 @@ classdef RaceTrack < handle
             hold on
             plot(obj.Xin,obj.Yin, 'r-', obj.Xout,obj.Yout ,'r-');
             axis equal;
-
+            
         end
         
-        function [ec, el] = getErrors(X,Y,thetaA)
-            i1 = find(obj.theta <= thetaA);
-            i1 = i1(end);
+        function [ec, el, XA, YA] = getErrors(obj,X,Y,thetaA)
+            
+            if thetaA < 10^-8
+                i1 = 1;
+            else
+                i1 = find(obj.theta <= thetaA);
+                i1 = i1(end);
+            end
             i2 = find(obj.theta >= thetaA);
             i2 = i2(1);
             

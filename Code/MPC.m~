@@ -327,32 +327,45 @@ classdef MPC < handle
         end
         
         
-        function [lb, ub] = getBounds(obj, car, rt)
+                function [lb, ub] = getBounds(obj, car,rt)
             N1 = obj.N;
-            nn = 3;
-            nOptVars = 1+N1*nn;
-            
-            lb = zeros(nOptVars,1);
-            ub = zeros(nOptVars,1);
+            nVarsPerIter = 3;
+            nOptVars = 1+nVarsPerIter*N1;
             
             % theta constraint
-            lb(1) = 0;
-            ub(1) = max(rt.theta);
+            temp1 = zeros(1, nOptVars);
+            temp1(1) = -1;
+            Aineq = [Aineq; temp1];
+            Bineq = [Bineq; 0];
             
-            % F_long bounds
-            lb(2:nn:end) = car.F_long_brake;
-            ub(2:nn:end) = car.F_long_accel;
+            % Flong constraints
+            for i = 2:nVarsPerIter:nOptVars
+                B = [Bineq; car.F_long_accel; -car.F_long_brake];
+            end
             
-            % delta bounds
-            lb(3:nn:end) = car.delta_min;
-            ub(3:nn:end) = car.delta_max;
+            % delta constraints
+            for i = 3:nVarsPerIter:nOptVars
+                temp1 = zeros(1, nOptVars);
+                temp2 = zeros(1, nOptVars);
+                temp1(i) = 1;
+                temp2(i) = -1;
+                Aineq = [Aineq; temp1; temp2];
+                Bineq = [Bineq; car.delta_max; -car.delta_min];
+            end
             
-            % v bounds
-            lb(4:nn:end) = 0;
-            ub(4:nn:end) = 100;
+            % v constraints
+            for i = 4:nVarsPerIter:nOptVars
+                temp1 = zeros(1, nOptVars);
+                temp2 = zeros(1, nOptVars);
+                temp1(i) = 1;
+                temp2(i) = -1;
+                Aineq = [Aineq; temp1; temp2];
+                Bineq = [Bineq; car.v_max; -car.v_min];
+            end
             
         end
         
     end
-    
+        
+    end
 end
