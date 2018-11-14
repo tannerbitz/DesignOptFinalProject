@@ -15,6 +15,7 @@ classdef MPC < handle
         v         % (1xN) [v]
         
         rt
+        car
         
         
         Ts        % sampling period
@@ -23,7 +24,7 @@ classdef MPC < handle
     end
     
     methods
-        function obj = MPC(Ts,N, X0, Y0 ,rt)
+        function obj = MPC(Ts,N, X0, Y0 ,rt,car)
             addpath ./TaylorEqs/;
             obj.Ts = Ts;
             obj.N = N;
@@ -34,12 +35,13 @@ classdef MPC < handle
             obj.States(1,:) = X0;
             obj.States(2,:) = Y0;
             obj.States(4,:) = 10;
-            obj.F_long      = 100*ones(1,N); %[car.F_long, car.delta]';
+            obj.F_long      = 400*ones(1,N); %[car.F_long, car.delta]';
             obj.delta       = zeros(1,N); %[car.F_long, car.delta]';
             obj.thetaA      = linspace(0,5,N);
             obj.v           = 10*ones(1,N);
             
             obj.rt = rt;
+            obj.car = car;
             
             
         end
@@ -147,12 +149,12 @@ classdef MPC < handle
         
         function cost = cost(obj,opt)
             % weights
-            qc = .01;
-            ql = 100;
-            gamma = 100;
-            ru1 = 100;
-            ru2 = 100;
-            rv = 100;
+            qc = 1;
+            ql = 1;
+            gamma = 1;
+            ru1 = 1;
+            ru2 = 1;
+            rv = 1;
             R = [ru1, 0 , 0;
                 0, ru2, 0;
                 0, 0, rv];
@@ -198,12 +200,12 @@ classdef MPC < handle
         
         function cost = cost2(obj,opt)
             % weights
-            qc = 1000000;
-            ql = 1000000;
-            gamma = 10;
-            ru1 = 10;
-            ru2 = 10;
-            rv = 10;
+            qc = 100;
+            ql = 10;
+            gamma = 1;
+            ru1 = 01;
+            ru2 = 1;
+            rv = 1;
             R = [ru1, 0 , 0;
                 0, ru2, 0;
                 0, 0, rv];
@@ -232,8 +234,7 @@ classdef MPC < handle
                 
                 % step the states forward in time
                 StatesTemp(:,k) = StatesTemp(:,k-1)  ...
-                    + obj.Ts*(obj.A(:,:,k-1)*(StatesTemp(:,k-1)-obj.States(:,k-1)) ...
-                    + obj.B(:,:,k-1)*([F_long_opt(k-1),delta_opt(k-1)]' - [obj.F_long(k-1), obj.delta(k-1)]' ) + obj.f(:,k-1));
+                    + obj.Ts*getRHS(obj,StatesTemp(:,k-1), F_long_opt(k-1), delta_opt(k-1));
                 
                 % compute errors
                 [ec,el] = obj.rt.getErrors(StatesTemp(1,k),StatesTemp(2,k),thetaTemp(k));
@@ -248,6 +249,61 @@ classdef MPC < handle
             end
         end
         
+        function States_dot = getRHS(obj,States_in, F_long_in, delta_in)
+            Fz_f = obj.car.mass*9.81*obj.car.dm;
+            Fz_r = obj.car.mass*9.81*(1-obj.car.dm);
+            
+            
+            lf = obj.car.dm*obj.car.length;  %lengths from cg to front and rear end
+            lr = (1-obj.car.dm)*obj.car.length;
+            R = obj.car.mu_k/obj.car.mu_s;
+            alphaFMax = atan2(3*obj.car.mu_s*Fz_f, obj.car.C);
+            alphaRMax = atan2(3*obj.car.mu_s*Fz_r, obj.car.C);
+            
+            alphaf = atan2(States_in(5) + lr*States_in(6), States_in(4)) - delta_in;
+            alphar = atan2(States_in(5) - lf*States_in(6), States_in(4));
+            
+            
+            %%%   INPUT VECTOR for f, A, B %%%%%
+            %    C,Flong,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy
+            C = obj.car.C;
+            Flong = F_long_in;
+            Fz_f = Fz_f;
+            Fz_r = Fz_r;
+            Iz = obj.car.Iz;
+            R = R;
+            delta_in = delta_in;
+            lf = lf;
+            lr = lr;
+            m = obj.car.mass;
+            mu = obj.car.mu_s;
+            omegaB = States_in(6);
+            varphi = States_in(3);
+            vx = States_in(4);
+            vy = States_in(5);
+            
+            if abs(vx) < 1 %10^-8
+                vx = 1; % 1e-8;
+            end
+            if abs(vy) < 10^-8
+                vy = 10^-8;
+            end
+            
+            if (abs(alphaf) < alphaFMax  && abs(alphar) < alphaRMax) % front grip, rear grip
+                States_dot = statesdot_fgrg(C,Flong,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                
+            elseif (abs(alphaf) >= alphaFMax && abs(alphar) < alphaRMax) % front slip, rear grip
+                States_dot = statesdot_fsrg(C,Flong,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                
+            elseif (abs(alphaf) < alphaFMax && abs(alphar) >= alphaRMax) % front grip, rear slip
+                States_dot = statesdot_fgrs(C,Flong,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                
+            elseif (abs(alphaf) >= alphaFMax && abs(alphar) >= alphaRMax) % front slip, rear slip
+                States_dot = statesdot_fsrs(Flong,Fz_f,Fz_r,Iz,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
+            end
+        end
+       
+    
         function [] = setStates(obj,opt)
             varsPerIter = 3;
             % inVec = [theta, F_long_1, delta_1, v_1, F_long_2, delta_2, v_2, ...

@@ -15,6 +15,7 @@ classdef MPC < handle
         v         % (1xN) [v]
         
         rt
+        car
         
         
         Ts        % sampling period
@@ -248,6 +249,74 @@ classdef MPC < handle
             end
         end
         
+        function States_dot = getRHS(delta, Sta)
+             Fz_f = car.mass*9.81*car.dm;
+            Fz_r = car.mass*9.81*(1-car.dm);
+            
+            N1 = obj.N;
+            for i = 1:N1
+                %%%   INPUT VECTOR for Gamma_ec, Gamma_el, Cec, Cel %%%%%
+                %    (X,Y,ax,ay,bx,by,cx,cy,dx,dy,theta)
+                X_in = obj.States(1, i);
+                Y_in = obj.States(2, i);
+                thetaA_in = obj.thetaA(i);
+                
+                inputs = {X_in, Y_in, ax, ay, bx, by, cx, cy, dx, dy, thetaA_in};
+                obj.Gamma_ec(:, :, i) = GammaEc(inputs{:});
+                obj.Gamma_el(:, :, i) = GammaEl(inputs{:});
+                obj.C_ec(:, i) = Cec(inputs{:});
+                obj.C_el(:, i) = Cel(inputs{:});
+                
+                lf = car.dm*car.length;  %lengths from cg to front and rear end
+                lr = (1-car.dm)*car.length;
+                R = car.mu_k/car.mu_s;
+                alphaFMax = atan2(3*car.mu_s*Fz_f, car.C);
+                alphaRMax = atan2(3*car.mu_s*Fz_r, car.C);
+                
+                alphaf = atan2(obj.States(5, i) + lr*obj.States(6, i), obj.States(4, i)) - obj.delta(i);
+                alphar = atan2(obj.States(5, i) - lf*obj.States(6, i), obj.States(4, i));
+                
+                %%%   INPUT VECTOR for f, A, B %%%%%
+                %    C,Flong,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy
+                C = obj.car.C;
+                Flong = obj.F_long(i);
+                Fz_f = Fz_f;
+                Fz_r = Fz_r;
+                Iz = obj.car.Iz;
+                R = R;
+                delta_in = obj.delta(i);
+                lf = lf;
+                lr = lr;
+                m = obj.car.mass;
+                mu = obj.car.mu_s;
+                omegaB = obj.States(6, i);
+                varphi = obj.States(3, i);
+                vx = obj.States(4, i);
+                vy = obj.States(5, i);
+                
+                if abs(vx) < 1 %10^-8
+                    vx = 1; % 1e-8;
+                end
+                if abs(vy) < 10^-8
+                    vy = 10^-8;
+                end
+                
+                if (abs(alphaf) < alphaFMax  && abs(alphar) < alphaRMax) % front grip, rear grip
+                    obj.f(:,i) = statesdot_fgrg(C,Flong,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    
+                elseif (abs(alphaf) >= alphaFMax && abs(alphar) < alphaRMax) % front slip, rear grip
+                    obj.f(:,i) = statesdot_fsrg(C,Flong,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy)
+                    
+                elseif (abs(alphaf) < alphaFMax && abs(alphar) >= alphaRMax) % front grip, rear slip
+                    obj.f(:,i) = statesdot_fgrs(C,Flong,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    
+                elseif (abs(alphaf) >= alphaFMax && abs(alphar) >= alphaRMax) % front slip, rear slip
+                    obj.f(:,i) = statesdot_fsrs(Flong,Fz_f,Fz_r,Iz,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                end
+            end
+            
+        end
+        
         function [] = setStates(obj,opt)
             varsPerIter = 3;
             % inVec = [theta, F_long_1, delta_1, v_1, F_long_2, delta_2, v_2, ...
@@ -327,45 +396,32 @@ classdef MPC < handle
         end
         
         
-                function [lb, ub] = getBounds(obj, car,rt)
+        function [lb, ub] = getBounds(obj, car, rt)
             N1 = obj.N;
-            nVarsPerIter = 3;
-            nOptVars = 1+nVarsPerIter*N1;
+            nn = 3;
+            nOptVars = 1+N1*nn;
+            
+            lb = zeros(nOptVars,1);
+            ub = zeros(nOptVars,1);
             
             % theta constraint
-            temp1 = zeros(1, nOptVars);
-            temp1(1) = -1;
-            Aineq = [Aineq; temp1];
-            Bineq = [Bineq; 0];
+            lb(1) = 0;
+            ub(1) = max(rt.theta);
             
-            % Flong constraints
-            for i = 2:nVarsPerIter:nOptVars
-                B = [Bineq; car.F_long_accel; -car.F_long_brake];
-            end
+            % F_long bounds
+            lb(2:nn:end) = car.F_long_brake;
+            ub(2:nn:end) = car.F_long_accel;
             
-            % delta constraints
-            for i = 3:nVarsPerIter:nOptVars
-                temp1 = zeros(1, nOptVars);
-                temp2 = zeros(1, nOptVars);
-                temp1(i) = 1;
-                temp2(i) = -1;
-                Aineq = [Aineq; temp1; temp2];
-                Bineq = [Bineq; car.delta_max; -car.delta_min];
-            end
+            % delta bounds
+            lb(3:nn:end) = car.delta_min;
+            ub(3:nn:end) = car.delta_max;
             
-            % v constraints
-            for i = 4:nVarsPerIter:nOptVars
-                temp1 = zeros(1, nOptVars);
-                temp2 = zeros(1, nOptVars);
-                temp1(i) = 1;
-                temp2(i) = -1;
-                Aineq = [Aineq; temp1; temp2];
-                Bineq = [Bineq; car.v_max; -car.v_min];
-            end
+            % v bounds
+            lb(4:nn:end) = 0;
+            ub(4:nn:end) = 100;
             
         end
         
     end
-        
-    end
+    
 end

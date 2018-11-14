@@ -2,7 +2,7 @@ close all; clear all;
 
 endTime = 10;
 Ts = .1;
-N = 10;      % horizon length
+N = 40;      % horizon length
 inputFile = 'track1.txt';
 width = 12;
 
@@ -18,9 +18,10 @@ Y0 = rt.Y(1);
 car = car1();  
 car.X = X0;
 car.Y = Y0;
+car.vx = 10;
 
 % initalize Model Pridictive Controller
-mpc = MPC(Ts,N,X0,Y0, rt);
+mpc = MPC(Ts,N,X0,Y0,rt, car);
 
 % initialize vehicle state histories vectors
 X_hist = [];
@@ -38,9 +39,8 @@ lapCount = 0;
 %[A, B] = mpc.getIneqCons(car);
 [lb,ub] = mpc.getBounds(car,rt);
 
-for n = 1:1
+for n = 1:length(time1)
     t = time1(n);
-    
     
     % calculate cubic approximation to track over the the prediction
     % horizon
@@ -60,6 +60,7 @@ for n = 1:1
     opt0(4:3:end) = mpc.v;
     
     %opt = fmincon(@mpc.cost2, opt0, A, B);
+    ub(1) = max(theta1);
     opt = fmincon(@mpc.cost2, opt0, [], [],[],[],lb,ub);
     mpc.setStates(opt);
     
@@ -68,8 +69,6 @@ for n = 1:1
     car.update(Ts,mpc.delta(1),mpc.F_long(1)/2);
     car.plotCar();
 
-
-    
     % save history of states
     X_hist = [X_hist car.X];
     Y_hist = [Y_hist car.Y];
@@ -88,6 +87,14 @@ for n = 1:1
 end
 
 figure
-plot(time1,vx_hist,time1,vy_hist);
+plot(vx_hist);
 hold on
+plot(vy_hist);
+hold on
+
+figure
+plot(F_long_hist);
+
+figure
+plot(delta_hist*180/pi);
 

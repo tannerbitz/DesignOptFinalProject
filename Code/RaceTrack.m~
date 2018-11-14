@@ -102,9 +102,9 @@ classdef RaceTrack < handle
             % compute track edge locations
             for i = 1:obj.N1
                 if i == 1
-                    nVec(i,:) = [-(obj.Y(i+1)-obj.Y(obj.N1-2)), (obj.X(i+1)-obj.X(obj.N1-2))];
+                    nVec(i,:) = [-(obj.Y(i+1)-obj.Y(N-2)), (obj.X(i+1)-obj.X(N-2))];
                     nVec(i,:) = nVec(i,:)/norm(nVec(i,:));
-                elseif i == obj.N1
+                elseif i == N
                     nVec(i,:) = [-(obj.Y(2)-obj.Y(i-1)), (obj.X(2)-obj.X(i-1))];
                     nVec(i,:) = nVec(i,:)/norm(nVec(i,:));
                 else
@@ -130,11 +130,10 @@ classdef RaceTrack < handle
             
             obj.N2 = length(obj.theta);
             
+            figure
             plot(obj.X,obj.Y, 'k--')
             hold on
             plot(obj.Xin,obj.Yin, 'r-', obj.Xout,obj.Yout ,'r-');
-            plot(p(:,1),p(:,2),'bo-')
-            
             axis equal;
             
         end
