@@ -1,8 +1,8 @@
 close all; clear all;
 
 endTime = 10;
-Ts = .05;
-N = 5;      % horizon length
+Ts = .1;
+N = 10;      % horizon length
 inputFile = 'track1.txt';
 width = 12;
 
@@ -20,8 +20,7 @@ car.X = X0;
 car.Y = Y0;
 
 % initalize Model Pridictive Controller
-mpc = MPC(Ts,N,X0,Y0);
-
+mpc = MPC(Ts,N,X0,Y0, rt);
 
 % initialize vehicle state histories vectors
 X_hist = [];
@@ -32,12 +31,14 @@ vy_hist = [];
 omegaB_hist = [];
 F_long_hist = [];
 delta_hist  = [];
+thetaA_hist = [];
 
 lapCount = 0;
 
-[A, B] = mpc.getIneqCons(car);
+%[A, B] = mpc.getIneqCons(car);
+[lb,ub] = mpc.getBounds(car,rt);
 
-for n = 1:length(time1)
+for n = 1:1
     t = time1(n);
     
     
@@ -57,7 +58,9 @@ for n = 1:length(time1)
     opt0(2:3:end) = mpc.F_long;
     opt0(3:3:end) = mpc.delta;
     opt0(4:3:end) = mpc.v;
-    opt = fmincon(@mpc.cost, opt0, A, B);
+    
+    %opt = fmincon(@mpc.cost2, opt0, A, B);
+    opt = fmincon(@mpc.cost2, opt0, [], [],[],[],lb,ub);
     mpc.setStates(opt);
     
     
@@ -65,9 +68,7 @@ for n = 1:length(time1)
     car.update(Ts,mpc.delta(1),mpc.F_long(1)/2);
     car.plotCar();
 
-    % set the new linearization states for the MPC controller
-    States = [car.X,car.Y, car.phi,car.vx,car.vy,car.omegaB];
-    mpc.setLinPoints(States);
+
     
     % save history of states
     X_hist = [X_hist car.X];
@@ -78,7 +79,12 @@ for n = 1:length(time1)
     omegaB_hist = [omegaB_hist car.omegaB];
     F_long_hist = [F_long_hist mpc.F_long(1)];
     delta_hist  = [delta_hist mpc.delta(1)];
-
+    thetaA_hist = [thetaA_hist, mpc.thetaA(1)];
+    
+    % set the new linearization states for the MPC controller
+    States = [car.X,car.Y, car.phi,car.vx,car.vy,car.omegaB];
+    mpc.setLinPoints(States);
+    
 end
 
 figure
