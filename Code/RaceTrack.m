@@ -138,7 +138,7 @@ classdef RaceTrack < handle
 
         end
         
-        function [ec, el] = getErrors(X,Y,thetaA)
+        function [ec, el] = getErrors(obj, X,Y,thetaA)
             i1 = find(obj.theta <= thetaA);
             i1 = i1(end);
             i2 = find(obj.theta >= thetaA);
