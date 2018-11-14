@@ -224,7 +224,7 @@ classdef SimModel < handle
             
             states = [obj.X; obj.Y; obj.phi; obj.vx; obj.vy; obj.omegaB];
             inputs = [Flong; delta];
-            Ts = 0.05;
+            Ts = 0.001;
             sys = ss(A, B, eye(6), []);
             sys2 = c2d(sys, Ts);
             Ad = sys2.A;
