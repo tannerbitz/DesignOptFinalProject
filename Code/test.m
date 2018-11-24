@@ -85,16 +85,47 @@ for n = 1:length(time1)
     mpc.setLinPoints(States);
     
 end
-
+%%
+close all 
 figure
-plot(vx_hist);
+plot(time1, vx_hist);
 hold on
-plot(vy_hist);
+plot(time1, vy_hist);
+hold off
+xlabel('Time (s)')
+ylabel('Velocity (m/s)')
+title('Velocity Components in Body Frame')
+legend('v_x', 'v_y')
+
+figure
+plot(time1, X_hist)
 hold on
+plot(time1, Y_hist)
+hold off
+xlabel('Time (s)')
+ylabel('Position (m)')
+title('X and Y Parametric Movements')
+legend('X', 'Y')
 
 figure
-plot(F_long_hist);
+plot(time1, F_long_hist);
+xlabel('Time (s)')
+ylabel('Force (N)')
+title('Longitudinal Force on Each Wheel')
+
 
 figure
-plot(delta_hist*180/pi);
+plot(time1, delta_hist*180/pi);
+xlabel('Time (s)')
+ylabel('Steering Angle (deg)')
+title('Steering Angle')
 
+figure
+plot(time1, phi_hist)
+hold on
+plot(time1, omegaB_hist)
+hold off
+xlabel('Time (s)')
+ylabel('Angle/Anglular Rate')
+title('Global Angle and Angular Rate')
+legend({'$\varphi$', '$\omega_B$'}, 'Interpreter', 'latex')
