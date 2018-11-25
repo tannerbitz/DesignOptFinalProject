@@ -1,3 +1,4 @@
+clear all
 syms theta ax bx cx dx ay by cy dy X Y 
 
 eta = 1e-8;
@@ -16,33 +17,17 @@ decdX = simplify(diff(ec, X));
 decdY = simplify(diff(ec, Y));
 decdtheta = simplify(diff(ec, theta));
 
-% states = [X, Y, vx, vy, varphi, omegaB]
-
-C_ec = [decdX;
-        decdY;
-        decdtheta];
-% matlabFunction(C_ec, 'File', 'getCec');
 
 %% el derivatives
 deldX = simplify(diff(el, X));
 deldY = simplify(diff(el, Y));
 deldtheta = simplify(diff(el, theta));
 
-C_el = [deldX;
-        deldY;
-        deldtheta];
-    
-
-% matlabFunction(C_el, 'File', 'getCel')
-
-
-
-
 
 %% Kenny's Addition
-syms theta X Y phi vx vy omegaB  delta F_long v X0 Y0 theta0 del_dx del_dy del_dtheta dec_dx dec_dy dec_dtheta ql qc el0 ec0
+syms theta X Y phi vx vy omegaB  delta F_long v X0 Y0 theta0 ql qc el0 ec0 ddelta dF_long dv Ts rdelta rF_long rv 
 
-optVar = [theta X Y phi vx vy omegaB delta F_long v]; 
+optVar = [theta X Y phi vx vy omegaB delta F_long v ddelta dF_long dv]; 
 
 %substite in decdX
 decdX = subs(decdX, X, X0);
@@ -81,14 +66,23 @@ deltaX = [X-X0; Y-Y0; theta-theta0];
 el2 = ql*(2*el0*del*deltaX + (del*deltaX)^2);
 ec2  = qc*(2*ec0*dec*deltaX + (dec*deltaX)^2);
 
-f = el2 + ec2 ;
-df = gradient(f,optVar);
-ddf = [gradient(df(1), optVar), gradient(df(2), optVar), gradient(df(3), optVar)];
-ddf = ddf';
-ddf = [ddf; zeros(length(optVar) - 3, length(optVar))];
 
+
+f = el2 + ec2 - v*Ts ;
+Df = gradient(f,optVar);
+DDf = [gradient(Df(1), optVar), gradient(Df(2), optVar), gradient(Df(3), optVar)];
+DDf = DDf';
+DDf = [DDf; zeros(length(optVar) - 3, length(optVar))];
+
+DDf(11,11) = rdelta;
+DDf(12,12) = rF_long;
+DDf(13,13) = rv;
 
 % plug in x,y,theta = 0 
-df = subs(df, X, 0);
-df = subs(df, Y, 0);
-df = subs(df, theta, 0);
+Df = subs(Df, X, 0);
+Df = subs(Df, Y, 0);
+Df = subs(Df, theta, 0);
+
+matlabFunction(Df, 'File', 'getDf');
+matlabFunction(DDf, 'File', 'getDDf');
+
