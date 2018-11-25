@@ -133,7 +133,7 @@ classdef RaceTrack < handle
             plot(obj.X,obj.Y, 'k--')
             hold on
             plot(obj.Xin,obj.Yin, 'r-', obj.Xout,obj.Yout ,'r-');
-            plot(p(:,1),p(:,2),'bo-')
+            %plot(p(:,1),p(:,2),'bo-')
             
             axis equal;
             

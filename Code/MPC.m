@@ -203,7 +203,7 @@ classdef MPC < handle
             qc = 100;
             ql = 10;
             gamma = 1;
-            ru1 = 01;
+            ru1 = 1;
             ru2 = 1;
             rv = 1;
             R = [ru1, 0 , 0;
