@@ -1,5 +1,8 @@
 classdef SimModel < handle
     properties
+        % car
+        vehicle
+        
         % vehicle physical properties
         mass      % vehicle mass
         length    % vehicle length (wheelbase)
@@ -29,10 +32,6 @@ classdef SimModel < handle
         vx        % body x velocity
         vy        % body y velocity
         omegaB    % body rotation rate
-        omegaW_fl % front left wheel rotation rate
-        omegaW_fr % front right wheel rotation rate
-        omegaW_rl % front left wheel rotation rate
-        omegaW_rr % front right wheel rotation rate
         
         Fx        % total x-force on vehicle from previous interation
         Fy        % total y-force on vehicle from previous interation
@@ -48,10 +47,8 @@ classdef SimModel < handle
         
         function update(obj,deltaT, delta, F_long)
             % update vehicle states using ODE45
-            
             States0 = [obj.X, obj.Y, obj.phi, obj.vx, obj.vy, obj.omegaB]';
-            
-            
+                  
             [~,newStates] = ode45(@(t,States) obj.calcRHS(t,States, delta,F_long), [0 deltaT], States0);
             
             obj.X = newStates(end,1);
@@ -296,9 +293,6 @@ classdef SimModel < handle
             else
                 F_lat = -sign(alpha)*obj.mu_s*Fz_in;
             end
-
-
-
         end
 
 

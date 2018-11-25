@@ -1,5 +1,6 @@
 classdef MPC < handle
     properties
+        
         f         % (6xN)
         A         % (6x6xN)
         B         % (6x2xN)
@@ -9,15 +10,13 @@ classdef MPC < handle
         C_ec      % (3xN)
         
         States    % (6xN) [X, Y, varphi, vx, vy, omegaB]'
-        thetaA    % (1xN) [thetaA]
-        F_long    % (1xN) [Flong]
-        delta     % (1xN) [delta]
-        v         % (1xN) [v]
+        thetaA    % (1xN) 
+        F_long    % (1xN) 
+        delta     % (1xN) 
+        v         % (1xN) 
         
-        rt
         car
-        
-        
+             
         Ts        % sampling period
         N         % Horizon length
         
@@ -246,60 +245,6 @@ classdef MPC < handle
                     - gamma*v_opt(k)*obj.Ts ...
                     + [F_long_opt(k)-F_long_opt(k-1); delta_opt(k)-delta_opt(k-1); v_opt(k)-v_opt(k-1)]'*R*[F_long_opt(k)-F_long_opt(k-1); delta_opt(k)-delta_opt(k-1); v_opt(k)-v_opt(k-1)];
                 
-            end
-        end
-        
-        function States_dot = getRHS(obj,States_in, F_long_in, delta_in)
-            Fz_f = obj.car.mass*9.81*obj.car.dm;
-            Fz_r = obj.car.mass*9.81*(1-obj.car.dm);
-            
-            
-            lf = obj.car.dm*obj.car.length;  %lengths from cg to front and rear end
-            lr = (1-obj.car.dm)*obj.car.length;
-            R = obj.car.mu_k/obj.car.mu_s;
-            alphaFMax = atan2(3*obj.car.mu_s*Fz_f, obj.car.C);
-            alphaRMax = atan2(3*obj.car.mu_s*Fz_r, obj.car.C);
-            
-            alphaf = atan2(States_in(5) + lr*States_in(6), States_in(4)) - delta_in;
-            alphar = atan2(States_in(5) - lf*States_in(6), States_in(4));
-            
-            
-            %%%   INPUT VECTOR for f, A, B %%%%%
-            %    C,Flong,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy
-            C = obj.car.C;
-            Flong = F_long_in;
-            Fz_f = Fz_f;
-            Fz_r = Fz_r;
-            Iz = obj.car.Iz;
-            R = R;
-            delta_in = delta_in;
-            lf = lf;
-            lr = lr;
-            m = obj.car.mass;
-            mu = obj.car.mu_s;
-            omegaB = States_in(6);
-            varphi = States_in(3);
-            vx = States_in(4);
-            vy = States_in(5);
-            
-            if abs(vx) < 1 %10^-8
-                vx = 1; % 1e-8;
-            end
-            if abs(vy) < 10^-8
-                vy = 10^-8;
-            end
-            
-            if (abs(alphaf) < alphaFMax  && abs(alphar) < alphaRMax) % front grip, rear grip
-                States_dot = statesdot_fgrg(C,Flong,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
-                
-            elseif (abs(alphaf) >= alphaFMax && abs(alphar) < alphaRMax) % front slip, rear grip
-                States_dot = statesdot_fsrg(C,Flong,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
-                
-            elseif (abs(alphaf) < alphaFMax && abs(alphar) >= alphaRMax) % front grip, rear slip
-                States_dot = statesdot_fgrs(C,Flong,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
-                
-            elseif (abs(alphaf) >= alphaFMax && abs(alphar) >= alphaRMax) % front slip, rear slip
-                States_dot = statesdot_fsrs(Flong,Fz_f,Fz_r,Iz,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
             end
         end
        
