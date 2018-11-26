@@ -157,12 +157,12 @@ classdef SimModel < handle
             Ff_lat = obj.getTireForcesMassera(omegaB_in, delta, vy_in, vx_in, Ff_z, lr);
             Fr_lat = obj.getTireForcesMassera(omegaB_in, delta, vy_in, vx_in, Fr_z, -lf);
 
-            Ff_long = F_long;
+            FF_long = F_long;
             Fr_long = F_long;
 
             % update Fx and Fy so it can be used in the next timestep;
-            obj.Fx = Fr_long + - Ff_lat*sin(delta) + Ff_long*cos(delta);
-            obj.Fy = Fr_lat + Ff_lat*cos(delta) + Ff_long*sin(delta);
+            obj.Fx = Fr_long + - Ff_lat*sin(delta) + FF_long*cos(delta);
+            obj.Fy = Fr_lat + Ff_lat*cos(delta) + FF_long*sin(delta);
             
             % compute derivatives of vehicle states
             X_dot = vx_in*cos(phi_in) - vy_in*sin(phi_in);
@@ -170,7 +170,7 @@ classdef SimModel < handle
             phi_dot = omegaB_in;
             vx_dot  = 1/obj.mass*(obj.Fx + obj.mass*vy_in*obj.omegaB);
             vy_dot  = 1/obj.mass*(obj.Fy - obj.mass*vx_in*obj.omegaB);
-            omegaB_dot = 1/obj.Iz*(Ff_lat*lf*cos(delta) + Ff_long*lf*sin(delta) - Fr_lat*lr);
+            omegaB_dot = 1/obj.Iz*(Ff_lat*lf*cos(delta) + FF_long*lf*sin(delta) - Fr_lat*lr);
 
             
             States_dot = [X_dot,Y_dot, phi_dot, vx_dot, vy_dot, omegaB_dot]';
@@ -178,7 +178,7 @@ classdef SimModel < handle
         end
         
         
-        function [] = updateOneTrackLinear(obj, deltaT, delta, Flong)
+        function [] = updateOneTrackLinear(obj, deltaT, delta, F_long)
             
             addpath ./TaylorEqs/
             
@@ -199,28 +199,28 @@ classdef SimModel < handle
 
 
             if (abs(alphaf) < alphaFMax  && abs(alphar) < alphaRMax) % front grip, rear grip
-                f = statesdot_fgrg(obj.C, Flong, Fz_f, Fz_r,obj.Iz,R,delta,lf,lr,obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
+                f = statesdot_fgrg(obj.C, F_long, Fz_f, Fz_r,obj.Iz,R,delta,lf,lr,obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
                 A = A_fgrg(obj.C, Fz_f, Fz_r, obj.Iz, R, delta, lf, lr, obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
-                B = B_fgrg(obj.C, Flong, Fz_f, obj.Iz, R, delta, lf, lr, obj.mass, obj.mu_s, obj.omegaB, obj.vx, obj.vy);
+                B = B_fgrg(obj.C, F_long, Fz_f, obj.Iz, R, delta, lf, lr, obj.mass, obj.mu_s, obj.omegaB, obj.vx, obj.vy);
             
             elseif (abs(alphaf) >= alphaFMax  && abs(alphar) < alphaRMax) % front grip, rear grip
-                f = statesdot_fsrg(obj.C, Flong, Fz_f, Fz_r,obj.Iz,R,delta,lf,lr,obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
+                f = statesdot_fsrg(obj.C, F_long, Fz_f, Fz_r,obj.Iz,R,delta,lf,lr,obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
                 A = A_fsrg(obj.C, Fz_f, Fz_r, obj.Iz, R, delta, lf, lr, obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
-                B = B_fsrg(obj.C, Flong, Fz_f, obj.Iz, R, delta, lf, lr, obj.mass, obj.mu_s, obj.omegaB, obj.vx, obj.vy);
+                B = B_fsrg(obj.C, F_long, Fz_f, obj.Iz, R, delta, lf, lr, obj.mass, obj.mu_s, obj.omegaB, obj.vx, obj.vy);
             
             elseif (abs(alphaf) < alphaFMax  && abs(alphar) >= alphaRMax) % front grip, rear grip
-                f = statesdot_fgrs(obj.C, Flong, Fz_f, Fz_r,obj.Iz,R,delta,lf,lr,obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
+                f = statesdot_fgrs(obj.C, F_long, Fz_f, Fz_r,obj.Iz,R,delta,lf,lr,obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
                 A = A_fgrs(obj.C, Fz_f, Fz_r, obj.Iz, R, delta, lf, lr, obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
-                B = B_fgrs(obj.C, Flong, Fz_f, obj.Iz, R, delta, lf, lr, obj.mass, obj.mu_s, obj.omegaB, obj.vx, obj.vy);
+                B = B_fgrs(obj.C, F_long, Fz_f, obj.Iz, R, delta, lf, lr, obj.mass, obj.mu_s, obj.omegaB, obj.vx, obj.vy);
             
             else
-                f = statesdot_fsrs(Flong,Fz_f,Fz_r, obj.Iz, delta,lf,lr,obj.mass, obj.mu_s, obj.omegaB, obj.phi,obj.vx,obj.vy);
+                f = statesdot_fsrs(F_long,Fz_f,Fz_r, obj.Iz, delta,lf,lr,obj.mass, obj.mu_s, obj.omegaB, obj.phi,obj.vx,obj.vy);
                 A = A_fsrs(Fz_f,Fz_r, obj.Iz,delta,lf,lr,obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
-                B = B_fsrs(Flong,Fz_f,obj.Iz, delta,lf,lr, obj.mass, obj.mu_s, obj.omegaB, obj.vx,obj.vy);
+                B = B_fsrs(F_long,Fz_f,obj.Iz, delta,lf,lr, obj.mass, obj.mu_s, obj.omegaB, obj.vx,obj.vy);
             end  
             
             states = [obj.X; obj.Y; obj.phi; obj.vx; obj.vy; obj.omegaB];
-            inputs = [Flong; delta];
+            inputs = [F_long; delta];
             Ts = 0.05;
             sys = ss(A, B, eye(6), []);
             sys2 = c2d(sys, Ts);
