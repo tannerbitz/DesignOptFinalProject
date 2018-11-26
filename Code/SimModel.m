@@ -242,6 +242,7 @@ classdef SimModel < handle
         end
         
         
+       
         
         function [F_long, F_lat] = getTireForces(obj, omegaW_in, vx_in, vy_in, Fz_in, delta_in, torque_in)
             %getTireForces calculates and returns the latitudinal and

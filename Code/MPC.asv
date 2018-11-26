@@ -50,7 +50,7 @@ classdef MPC < handle
             nVarsPerIter = 13;
             
             for i = 1:N1
-                U(:,i) = [optVar(8+13*(i-1),1); optVar(9+13*(i-1),1)]; %[delta, Flong]
+                U(:,i) = [optVar(8+13*(i-1); optVar(9+13*(i-1))] %[delta, Flong]
             end
             
             % set initial states to current sim states
@@ -65,7 +65,7 @@ classdef MPC < handle
 %             obj.States(:,N1) = obj.States(:,N1) + obj.Ts*obj.f(:,N1);
 
             for i = 2:N1
-                obj.States(:,i) = obj.A(:,:,i-1)*obj.States(:,i-1) + obj.B(:,:,i-1)*U(:,i-1);
+                obj.States(:,i) = obj.A(:,:,i-1)*obj.States(:,i-1) + obj.B(:,:,i-1)*obj.[
             end
 
 
