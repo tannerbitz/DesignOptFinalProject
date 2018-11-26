@@ -9,11 +9,14 @@ classdef MPC < handle
         C_el      % (3xN)
         C_ec      % (3xN)
         
-        States    % (6xN) [X, Y, varphi, vx, vy, omegaB]'
         thetaA    % (1xN) 
-        F_long    % (1xN) 
+        States    % (6xN) [X, Y, varphi, vx, vy, omegaB]'
         delta     % (1xN) 
+        F_long    % (1xN) 
         v         % (1xN) 
+        ddelta    % (1xN)
+        dFlong    % (1xN)
+        dv        % (1xN)
         
         car
              
@@ -49,24 +52,16 @@ classdef MPC < handle
             N1 = obj.N;
             nVarsPerIter = 13;
             
-            for i = 1:N1
-                U(:,i) = [optVar(8+13*(i-1); optVar(9+13*(i-1))] %[delta, Flong]
-            end
+            U(:,1) = [optVar(8+nVarsPerIter*(N1-1),1); optVar(9+nVarsPerIter*(N1-1),1)]; %[delta, Flong]
             
             % set initial states to current sim states
             obj.States(:,1) = States;
             
-%             % shift states by one sampling period
-%             for i = 2:N1-1
-%                 obj.States(:,i) = obj.States(:,i+1);
-%             end
-%             
-%             % compute last state
-%             obj.States(:,N1) = obj.States(:,N1) + obj.Ts*obj.f(:,N1);
-
-            for i = 2:N1
-                obj.States(:,i) = obj.A(:,:,i-1)*obj.States(:,i-1) + obj.B(:,:,i-1)*obj.[
+            for i = 2:N1-1
+                obj.States(:,i) = obj.States(:,i+1);
             end
+
+            obj.States(:,N1) = obj.A(:,:,N1)*obj.States(:,N1) + obj.B(:,:,N1)*U(:,N1);
 
 
             % shift optimization vars by one sampling period to use as
@@ -76,6 +71,9 @@ classdef MPC < handle
                 obj.delta(i) = obj.delta(i+1);
                 obj.v(i) = obj.v(i+1);
                 obj.thetaA(i) = obj.thetaA(i+1);
+                obj.ddelta(i) = obj.ddelta(i+1);
+                obj.dFlong(i) = obj.dFlong(i+1);
+                obj.dv(i) = obj.dv(i+1);
             end
             
         end
@@ -263,39 +261,9 @@ classdef MPC < handle
             end
         end
        
-    
-        function [] = setStates(obj,opt)
-            varsPerIter = 3;
-            % inVec = [theta, F_long_1, delta_1, v_1, F_long_2, delta_2, v_2, ...
-            lenInVec = length(opt);
-            theta = opt(1);
-            F_long_opt = opt(2:varsPerIter:lenInVec-2);
-            delta_opt = opt(3:varsPerIter:lenInVec-1);
-            v_opt = opt(4:varsPerIter:lenInVec);
-            
-            thetaTemp = zeros(1,obj.N);
-            StatesTemp = zeros(6,obj.N);
-            thetaTemp(1) = theta;
-            StatesTemp(:,1) = obj.States(1);
-            for k = 2:obj.N
-                % step theta forward in time
-                thetaTemp(k) = thetaTemp(k-1) + v_opt(k)*obj.Ts;
-                
-                % step the states forward in time
-                StatesTemp(:,k) = StatesTemp(:,k-1)  ...
-                    + obj.Ts*(obj.A(:,:,k-1)*(StatesTemp(:,k-1)-obj.States(:,k-1)) ...
-                    + obj.B(:,:,k-1)*([F_long_opt(k-1),delta_opt(k-1)]' - [obj.F_long(k-1)', obj.delta(k-1)]' ) + obj.f(:,k-1));
-            end
-            
-            obj.States = StatesTemp;
-            obj.thetaA = thetaTemp;
-            obj.F_long = F_long_opt;
-            obj.delta  = delta_opt;
-            obj.v      = v_opt;
-            
-        end
+
         
-        function [Aeq, Beq] = getEqualityCons(obj, car, theta0, x0)
+        function [Aeq, Beq] = getEqualityCons(obj, car)
             nVarsPerIter = 13;
             nVars = nVarsPerIter*obj.N;
             
@@ -303,8 +271,40 @@ classdef MPC < handle
             Beq = zeros(nVars, 1);
             % initialize theta and states
             Aeq(1:7, 1:7) = eye(7);
-            Beq(1,1) = theta0;
-            Beq(2,7) = x0;
+            Beq(1,1) = obj.thetaA(1);
+            Beq(2,7) = obj.States(:,1);
+            
+            N1 = obj.N;
+            for i = 2:N1
+                temp = zeros(nVarsPerIter, 2*nVarsPerIter);
+                % theta_k + vk*Ts - theta_k+1 = 0
+                temp(1, 1) = 1;
+                temp(1, 10) = obj.Ts;
+                temp(1, nVarsPerIter+1) = -1;
+                
+                % A_k*X_k + B_k*U_k - X_k+1 = 0
+                temp(2:7, 2:7) = obj.A(:,:,i-1);
+                temp(2:7, 8:9) = obj.B(:,:,i-1);
+                temp(2:7, 2+nVarsPerIter:7+nVarsPerIter) = -eye(size(obj.A(:,:,i)));
+                
+                % delta_k+1 - delta_k - ddelta_k+1 = 0
+                temp(11, 8) = -1;
+                temp(11, 8+nVarsPerIter) = 1;
+                temp(11, 11+nVarsPerIter) = -1;
+                
+                % Flong_k+1 - Flong_k - dFlong_k+1 = 0
+                temp(12, 9) = -1;
+                temp(12, 9+nVarsPerIter) = 1;
+                temp(12, 12+nVarsPerIter) = -1;
+                
+                % v_k+1 - v_k - dv_k+1 = 0
+                temp(13, 10) = -1;
+                temp(13, 10+nVarsPerIter) = 1;
+                temp(13, 13+nVarsPerIter) = -1;
+                
+                Aeq(1+(i-1)*nVarsPerIter:nVarsPerIter+(i-1)*nVarsPerIter, ...
+                    1+(i-2)*(2*nVarsPerIter):(i-1)*(2*nVarsPerIter)) = temp;
+            end
             
             
         end
