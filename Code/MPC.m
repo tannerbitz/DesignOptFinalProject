@@ -11,10 +11,11 @@ classdef MPC < handle
         F_long    % (1xN) 
         v         % (1xN) 
         ddelta    % (1xN)
-        dF_long    % (1xN)
+        dF_long   % (1xN)
         dv        % (1xN)
         
-             
+        nVarsPerIter % number of optimzation variables per time step     
+        
         Ts        % sampling period
         N         % Horizon length
         
@@ -43,12 +44,14 @@ classdef MPC < handle
             obj.dF_long      = zeros(1,N);
             obj.dv          = zeros(1,N);
             
+            obj.nVarsPerIter = 13;
+            
             
         end
         
         function [] = setLinPoints(obj,States)
             N1 = obj.N;
-            nVarsPerIter = 13;
+            nVarsPerIter = obj.nVarsPerIter;
             
             U(:,1) = [obj.delta(N1); obj.F_long(N1)]; %[delta, F_long]
             
@@ -76,21 +79,13 @@ classdef MPC < handle
             
         end
         
-        function [] = linearize(obj, car, ax, ay, bx, by, cx, cy, dx, dy)
+        function [] = linearizeModel(obj, car)
             
             Fz_f = car.mass*9.81*car.dm;
             Fz_r = car.mass*9.81*(1-car.dm);
             
             N1 = obj.N;
             for i = 1:N1
-                %%%   INPUT VECTOR for Gamma_ec, Gamma_el, Cec, Cel %%%%%
-                %    (X,Y,ax,ay,bx,by,cx,cy,dx,dy,theta)
-                X_in = obj.States(1, i);
-                Y_in = obj.States(2, i);
-                thetaA_in = obj.thetaA(i);
-                
-                inputs = {X_in, Y_in, ax, ay, bx, by, cx, cy, dx, dy, thetaA_in};
-                
                 lf = car.dm*car.length;  %lengths from cg to front and rear end
                 lr = (1-car.dm)*car.length;
                 R = car.mu_k/car.mu_s;
@@ -147,6 +142,35 @@ classdef MPC < handle
                 obj.B(:,:,i) = Ac\(obj.A(:,:,i) - eye(size(Ac)))*Bc;
                 
             end
+        end
+        
+        function [G,H] = getCostMatrices(obj, ax, ay, bx, by, cx, cy, dx, dy)
+            H = zeros(obj.nVarsPerIter*obj.N);
+            G = zeros(obj.nVarsPerIter*obj.N,1);
+            
+            % set weights cost functions terms
+            qc = 1;
+            ql = 1;
+            gamma = 1;
+            rdelta = 1;
+            rF_long = 1;
+            rv = 1;
+            
+            for i = 1:obj.N
+                X0 = obj.States(1,i);
+                Y0 = obj.States(2,i);
+                theta0 = obj.thetaA(i);
+                ec0 = getEc(X0,Y0,ax,ay,bx,by,cx,cy,dx,dy,theta0);
+                el0 = getEl(X0,Y0,ax,ay,bx,by,cx,cy,dx,dy,theta0);
+                
+                Gtemp = getDf(obj.Ts,X0,Y0,ax,ay,bx,by,cx,cy,dx,dy,ec0,el0,gamma,qc,ql,theta0);
+                Htemp = getDDf(X0,Y0,ax,ay,bx,by,cx,cy,dx,dy,qc,ql,rF_long,rdelta,rv,theta0);
+                
+                G(1+(i-1)*obj.nVarsPerIter:i*obj.nVarsPerIter) = Gtemp;
+                H(1+(i-1)*obj.nVarsPerIter:i*obj.nVarsPerIter,1+(i-1)*obj.nVarsPerIter:i*obj.nVarsPerIter) = Htemp;
+                
+            end
+            
         end
         
         function cost = cost(obj,opt)

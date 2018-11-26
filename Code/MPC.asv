@@ -11,10 +11,11 @@ classdef MPC < handle
         F_long    % (1xN) 
         v         % (1xN) 
         ddelta    % (1xN)
-        dFlong    % (1xN)
+        dF_long    % (1xN)
         dv        % (1xN)
         
-             
+        nVarsPerIter % number of optimzation variables per time step     
+        
         Ts        % sampling period
         N         % Horizon length
         
@@ -28,26 +29,29 @@ classdef MPC < handle
             
             
             % set initial optimization variables
-            obj.thetaA      = linspace(0,5);
-            obj.States      =  zeros(6,N); %[car.X, car.Y, car.phi, car.vx, car.vy, car.omegaB]';
+            obj.thetaA      = linspace(0,5,N);
+            obj.States      = zeros(6,N); %[car.X, car.Y, car.phi, car.vx, car.vy, car.omegaB]';
             obj.States(1,:) = car.X;
             obj.States(2,:) = car.Y;
-            obj.States(4,:) = 10;
+            obj.States(3,:) = car.phi;
+            obj.States(4,:) = car.vx;
+            obj.States(5,:) = car.vy;
+            obj.States(6,:) = car.omegaB;
             obj.delta       = zeros(1,N); %[car.F_long, car.delta]';
-            obj.F_long      = 400*ones(1,N); %[car.F_long, car.delta]';
+            obj.F_long       = 400*ones(1,N); %[car.F_long, car.delta]';
             obj.v           = 10*ones(1,N);
             obj.ddelta      = zeros(1,N);
-            obj.dFlong      = zeros(1,N);
+            obj.dF_long      = zeros(1,N);
             obj.dv          = zeros(1,N);
             
             
         end
         
-        function [] = setLinPoints(obj,States, optVar)
+        function [] = setLinPoints(obj,States)
             N1 = obj.N;
             nVarsPerIter = 13;
             
-            U(:,1) = [optVar(8+nVarsPerIter*(N1-1),1); optVar(9+nVarsPerIter*(N1-1),1)]; %[delta, Flong]
+            U(:,1) = [obj.delta(N1); obj.F_long(N1)]; %[delta, F_long]
             
             % set initial states to current sim states
             obj.States(:,1) = States;
@@ -56,7 +60,7 @@ classdef MPC < handle
                 obj.States(:,i) = obj.States(:,i+1);
             end
 
-            obj.States(:,N1) = obj.A(:,:,N1)*obj.States(:,N1) + obj.B(:,:,N1)*U(:,N1);
+            obj.States(:,N1) = obj.A(:,:,N1)*obj.States(:,N1) + obj.B(:,:,N1)*U;
 
 
             % shift optimization vars by one sampling period to use as
@@ -67,27 +71,19 @@ classdef MPC < handle
                 obj.v(i) = obj.v(i+1);
                 obj.thetaA(i) = obj.thetaA(i+1);
                 obj.ddelta(i) = obj.ddelta(i+1);
-                obj.dFlong(i) = obj.dFlong(i+1);
+                obj.dF_long(i) = obj.dF_long(i+1);
                 obj.dv(i) = obj.dv(i+1);
             end
             
         end
         
-        function [] = linearize(obj, car, ax, ay, bx, by, cx, cy, dx, dy)
+        function [] = linearizeModel(obj, car)
             
             Fz_f = car.mass*9.81*car.dm;
             Fz_r = car.mass*9.81*(1-car.dm);
             
             N1 = obj.N;
             for i = 1:N1
-                %%%   INPUT VECTOR for Gamma_ec, Gamma_el, Cec, Cel %%%%%
-                %    (X,Y,ax,ay,bx,by,cx,cy,dx,dy,theta)
-                X_in = obj.States(1, i);
-                Y_in = obj.States(2, i);
-                thetaA_in = obj.thetaA(i);
-                
-                inputs = {X_in, Y_in, ax, ay, bx, by, cx, cy, dx, dy, thetaA_in};
-                
                 lf = car.dm*car.length;  %lengths from cg to front and rear end
                 lr = (1-car.dm)*car.length;
                 R = car.mu_k/car.mu_s;
@@ -98,9 +94,9 @@ classdef MPC < handle
                 alphar = atan2(obj.States(5, i) - lf*obj.States(6, i), obj.States(4, i));
                 
                 %%%   INPUT VECTOR for f, A, B %%%%%
-                %    C,Flong,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy
+                %    C,F_long,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy
                 C = car.C;
-                Flong = obj.F_long(i);
+                F_long = obj.F_long(i);
                 Fz_f = Fz_f;
                 Fz_r = Fz_r;
                 Iz = car.Iz;
@@ -124,26 +120,44 @@ classdef MPC < handle
                 
                 if (abs(alphaf) < alphaFMax  && abs(alphar) < alphaRMax) % front grip, rear grip
                     Ac = A_fgrg(C,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
-                    Bc = B_fgrg(C,Flong,Fz_f,Iz,R,delta_in,lf,lr,m,mu,omegaB,vx,vy);
+                    Bc = B_fgrg(C,F_long,Fz_f,Iz,R,delta_in,lf,lr,m,mu,omegaB,vx,vy);
                     
                 elseif (abs(alphaf) >= alphaFMax && abs(alphar) < alphaRMax) % front slip, rear grip
                     Ac = A_fsrg(C,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
-                    Bc = B_fsrg(Flong,Fz_f,Iz,delta_in,lf,lr,m,mu,omegaB,vx,vy);
+                    Bc = B_fsrg(F_long,Fz_f,Iz,delta_in,lf,lr,m,mu,omegaB,vx,vy);
                     
                 elseif (abs(alphaf) < alphaFMax && abs(alphar) >= alphaRMax) % front grip, rear slip
                     Ac = A_fgrs(C,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
-                    Bc = B_fgrs(C,Flong,Fz_f,Iz,R,delta_in,lf,lr,m,mu,omegaB,vx,vy);
+                    Bc = B_fgrs(C,F_long,Fz_f,Iz,R,delta_in,lf,lr,m,mu,omegaB,vx,vy);
                     
                 elseif (abs(alphaf) >= alphaFMax && abs(alphar) >= alphaRMax) % front slip, rear slip
                     Ac = A_fsrs(Fz_f,Fz_r,Iz,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
-                    Bc = B_fsrs(Flong,Fz_f,Iz,delta_in,lf,lr,m,mu,omegaB,vx,vy);
+                    Bc = B_fsrs(F_long,Fz_f,Iz,delta_in,lf,lr,m,mu,omegaB,vx,vy);
                 end
                 
                 % Convert To Discrete
-                obj.A(:,:,i) = expm(obj.A(:,:,i)*obj.Ts);
-                obj.B(:,:,i) = Ac\(obj.A - eye(size(Ac)))*Bc;
+                obj.A(:,:,i) = expm(Ac*obj.Ts);
+                obj.B(:,:,i) = Ac\(obj.A(:,:,i) - eye(size(Ac)))*Bc;
                 
             end
+        end
+        
+        function [G,H] = getCostMatrices(obj, ax, ay, bx, by, cx, cy, dx, dy)
+            H = zeros(
+            
+            % set weights cost functions terms
+            qc = 1;
+            ql = 1;
+            gamma = 1;
+            rdelta = 1;
+            rF_long = 1;
+            rv = 1;
+            
+            for i = 1:obj.N
+                
+                
+            end
+            
         end
         
         function cost = cost(obj,opt)
@@ -208,7 +222,7 @@ classdef MPC < handle
             % initialize theta and states
             Aeq(1:7, 1:7) = eye(7);
             Beq(1,1) = obj.thetaA(1);
-            Beq(2,7) = obj.States(:,1);
+            Beq(2:7) = obj.States(:,1);
             
             N1 = obj.N;
             
@@ -235,7 +249,7 @@ classdef MPC < handle
                 temp(11, 8+nVarsPerIter) = 1;
                 temp(11, 11+nVarsPerIter) = -1;
                 
-                % Flong_k+1 - Flong_k - dFlong_k+1 = 0
+                % F_long_k+1 - F_long_k - dF_long_k+1 = 0
                 temp(12, 9) = -1;
                 temp(12, 9+nVarsPerIter) = 1;
                 temp(12, 12+nVarsPerIter) = -1;

@@ -12,6 +12,9 @@ Phi = atan(dfydtheta/ (dfxdtheta + eta));
 ec = sin(Phi)*(X - fx) - cos(Phi)*(Y - fy);
 el = -cos(Phi)*(X - fx) - sin(Phi)*(Y - fy);
 
+matlabFunction(ec, 'File', 'getEc');
+matlabFunction(el, 'File', 'getEl');
+
 %% ec derivates
 decdX = simplify(diff(ec, X));
 decdY = simplify(diff(ec, Y));
@@ -25,7 +28,7 @@ deldtheta = simplify(diff(el, theta));
 
 
 %% Kenny's Addition
-syms theta X Y phi vx vy omegaB  delta F_long v X0 Y0 theta0 ql qc el0 ec0 ddelta dF_long dv Ts rdelta rF_long rv 
+syms theta X Y phi vx vy omegaB  delta F_long v X0 Y0 theta0 ql qc el0 ec0 ddelta dF_long dv Ts rdelta rF_long rv gamma
 
 optVar = [theta X Y phi vx vy omegaB delta F_long v ddelta dF_long dv]; 
 
@@ -68,7 +71,7 @@ ec2  = qc*(2*ec0*dec*deltaX + (dec*deltaX)^2);
 
 
 
-f = el2 + ec2 - v*Ts ;
+f = el2 + ec2 - gamma*v*Ts ;
 Df = gradient(f,optVar);
 DDf = [gradient(Df(1), optVar), gradient(Df(2), optVar), gradient(Df(3), optVar)];
 DDf = DDf';

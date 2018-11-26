@@ -50,8 +50,8 @@ for n = 1:length(time1)
     [ax,bx,cx,dx,ay,by,cy,dy] = rt.getCubicPolynomial(theta1,X1,Y1);
     
 
-    %linearize prediction and error models 
-    mpc.linearize(car, ax, ay, bx, by, cx, cy, dx, dy)
+    %linearize dynamics model 
+    mpc.linearizeModel(car)
    
     % make optVar vector
     optVar0 = zeros(nVarsPerIter*N, 1);
@@ -68,6 +68,7 @@ for n = 1:length(time1)
     
     % solve optimization problem to yield inputs [delta, Flong]
     [Aeq, Beq] = mpc.getEqualityCons();
+    [G,H] = mpc.getCostMatrices(ax, ay, bx, by, cx, cy, dx, dy);
     
     
     % update simulation model states using ode45

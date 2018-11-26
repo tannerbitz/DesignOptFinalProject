@@ -50,10 +50,11 @@ for n = 1:length(time1)
     [ax,bx,cx,dx,ay,by,cy,dy] = rt.getCubicPolynomial(theta1,X1,Y1);
     
 
-    %linearize prediction and error models 
-    mpc.linearize(car, ax, ay, bx, by, cx, cy, dx, dy)
+    %linearize dynamics model 
+    mpc.linearizeModel(car, ax, ay, bx, by, cx, cy, dx, dy)
    
     % make optVar vector
+    optVar0 = zeros(nVarsPerIter*N, 1);
     optVar0(1:nVarsPerIter:end) = mpc.thetaA;
     for i = 1:N
         optVar0(2+(i-1)*nVarsPerIter:+7+(i-1)*nVarsPerIter) = mpc.States(:,i);
@@ -62,13 +63,12 @@ for n = 1:length(time1)
     optVar0(9:nVarsPerIter:end)  = mpc.F_long;
     optVar0(10:nVarsPerIter:end) = mpc.v;
     optVar0(11:nVarsPerIter:end) = mpc.ddelta;
-    optVar0(12:nVarsPerIter:end) = mpc.dFlong;
+    optVar0(12:nVarsPerIter:end) = mpc.dF_long;
     optVar0(13:nVarsPerIter:end) = mpc.dv;
     
-    %opt = fmincon(@mpc.cost2, opt0, A, B);
-%     ub(1) = max(theta1);
-%     opt = fmincon(@mpc.cost2, opt0, [], [],[],[],lb,ub);
-    mpc.setStates(opt);
+    % solve optimization problem to yield inputs [delta, Flong]
+    [Aeq, Beq] = mpc.getEqualityCons();
+    [G,H] = mpc.get();
     
     
     % update simulation model states using ode45
