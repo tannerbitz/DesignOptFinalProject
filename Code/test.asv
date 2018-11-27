@@ -70,7 +70,7 @@ for n = 1:length(time1)
     [Aeq, Beq] = mpc.getEqualityCons();
     [G,H] = mpc.getCostMatrices(ax, ay, bx, by, cx, cy, dx, dy);
     
-    optVar = quadprog(H,G,[],[],Aeq,Beq,lb,ub);
+    optVar = quadprog(H,G,[],[],Aeq,Beq,lb,ub,optVar0);
     
     % update variable vectors
     mpc.thetaA = optVar(1:nVarsPerIter:end) ;
@@ -80,9 +80,10 @@ for n = 1:length(time1)
     mpc.delta = optVar(8:nVarsPerIter:end);
     mpc.F_long = optVar(9:nVarsPerIter:end);
     mpc.v = optVar(10:nVarsPerIter:end) ;
-    mpc.ddelta = optVar(11:nVarsPerIter:end);
-    mpc.dF_long = optVar(12:nVarsPerIter:end);
-    mpc.dv = optVar(13:nVarsPerIter:end);
+    mpc.ddelta = optVar0(11:nVarsPerIter:end);
+    mpc.dF_long = optVar0(12:nVarsPerIter:end);
+    mpc.dv = optVar0(13:nVarsPerIter:end);
+    
     
     % update simulation model states using ode45
     car.update(Ts,mpc.delta(1),mpc.F_long(1)/2);
