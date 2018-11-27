@@ -84,6 +84,7 @@ for n = 1:length(time1)
     mpc.dF_long = optVar(12:nVarsPerIter:end);
     mpc.dv = optVar(13:nVarsPerIter:end);
     
+    plot(mpc.States(1,:), mpc.States(2,:), 'b.-')
     % update simulation model states using ode45
     car.update(Ts,mpc.delta(1),mpc.F_long(1)/2);
     car.plotCar();

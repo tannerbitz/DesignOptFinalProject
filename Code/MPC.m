@@ -154,9 +154,9 @@ classdef MPC < handle
             G = zeros(obj.nVarsPerIter*obj.N,1);
             
             % set weights cost functions terms
-            qc = 1;
-            ql = 1;
-            gamma = 1;
+            qc = 100;
+            ql = 100;
+            gamma = 100;
             rdelta = 1;
             rF_long = 1;
             rv = 1;
