@@ -11,7 +11,7 @@ classdef MPC < handle
         F_long    % (1xN) 
         v         % (1xN) 
         ddelta    % (1xN)
-        dF_long    % (1xN)
+        dF_long   % (1xN)
         dv        % (1xN)
         
         nVarsPerIter % number of optimzation variables per time step     
@@ -44,12 +44,14 @@ classdef MPC < handle
             obj.dF_long      = zeros(1,N);
             obj.dv          = zeros(1,N);
             
+            obj.nVarsPerIter = 13;
+            
             
         end
         
         function [] = setLinPoints(obj,States)
             N1 = obj.N;
-            nVarsPerIter = 13;
+            nVarsPerIter = obj.nVarsPerIter;
             
             U(:,1) = [obj.delta(N1); obj.F_long(N1)]; %[delta, F_long]
             
@@ -137,13 +139,21 @@ classdef MPC < handle
                 
                 % Convert To Discrete
                 obj.A(:,:,i) = expm(Ac*obj.Ts);
-                obj.B(:,:,i) = Ac\(obj.A(:,:,i) - eye(size(Ac)))*Bc;
-                
+                phitemp = zeros(size(Ac));
+                tic
+                for k = 0:1:5
+                    phitemp = phitemp + Ac^k*obj.Ts^(k+1)/(factorial(k+1));
+                end
+                obj.B(:,:,i) = phitemp*Bc;
+%                 obj.B(:,:,i) = (eye(size(Ac)) + Ac*obj.Ts/2*(eye(size(Ac)) + Ac*obj.Ts/6))*obj.Ts*Bc;
+%                 obj.B(:,:,i) = Ac\(obj.A(:,:,i) - eye(size(Ac)))*Bc;
+                toc
             end
         end
         
         function [G,H] = getCostMatrices(obj, ax, ay, bx, by, cx, cy, dx, dy)
-            H = zeros(
+            H = zeros(obj.nVarsPerIter*obj.N);
+            G = zeros(obj.nVarsPerIter*obj.N,1);
             
             % set weights cost functions terms
             qc = 1;
@@ -154,7 +164,17 @@ classdef MPC < handle
             rv = 1;
             
             for i = 1:obj.N
+                X0 = obj.States(1,i);
+                Y0 = obj.States(2,i);
+                theta0 = obj.thetaA(i);
+                ec0 = getEc(X0,Y0,ax,ay,bx,by,cx,cy,dx,dy,theta0);
+                el0 = getEl(X0,Y0,ax,ay,bx,by,cx,cy,dx,dy,theta0);
                 
+                Gtemp = getDf(obj.Ts,X0,Y0,ax,ay,bx,by,cx,cy,dx,dy,ec0,el0,gamma,qc,ql,theta0);
+                Htemp = getDDf(X0,Y0,ax,ay,bx,by,cx,cy,dx,dy,qc,ql,rF_long,rdelta,rv,theta0);
+                
+                G(1+(i-1)*obj.nVarsPerIter:i*obj.nVarsPerIter) = Gtemp;
+                H(1+(i-1)*obj.nVarsPerIter:i*obj.nVarsPerIter,1+(i-1)*obj.nVarsPerIter:i*obj.nVarsPerIter) = Htemp;
                 
             end
             

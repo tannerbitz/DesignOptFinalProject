@@ -139,8 +139,13 @@ classdef MPC < handle
                 
                 % Convert To Discrete
                 obj.A(:,:,i) = expm(Ac*obj.Ts);
-                obj.B(:,:,i) = Ac\(obj.A(:,:,i) - eye(size(Ac)))*Bc;
-                
+                phitemp = zeros(size(Ac));
+                for k = 0:1:10
+                    phitemp = phitemp + Ac^k*obj.Ts^(k+1)/(factorial(k+1));
+                end
+                obj.B(:,:,i) = phitemp*Bc;
+
+              
             end
         end
         
