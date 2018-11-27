@@ -294,28 +294,62 @@ classdef MPC < handle
         
         
         function [lb, ub] = getBounds(obj, car, rt)
-            N1 = obj.N;
-            nn = 3;
-            nOptVars = 1+N1*nn;
+            nn = obj.nVarsPerIter;
+            nOptVars = obj.nVarsPerIter*obj.N;
             
             lb = zeros(nOptVars,1);
             ub = zeros(nOptVars,1);
             
             % theta constraint
-            lb(1) = 0;
-            ub(1) = max(rt.theta);
+            lb(1:nn:end) = 0;
+            ub(1:nn:end) =  max(rt.theta);
             
-            % F_long bounds
-            lb(2:nn:end) = car.F_long_brake;
-            ub(2:nn:end) = car.F_long_accel;
+            % X constraint
+            lb(2:nn:end) = -100000;
+            ub(2:nn:end) = 100000;
+            
+            % Y constraint
+            lb(3:nn:end) = -100000;
+            ub(3:nn:end) = 100000;
+            
+            % phi constraint
+            lb(4:nn:end) = -100000;
+            ub(4:nn:end) = 100000;
+            % vx constraint
+            lb(5:nn:end) = -100;
+            ub(5:nn:end) = 100;
+            
+            % vy constraint
+            lb(6:nn:end) = -100;
+            ub(6:nn:end) = 100;
+            
+            % omegaB constraint
+            lb(7:nn:end) = -100;
+            ub(7:nn:end) = 100;
             
             % delta bounds
-            lb(3:nn:end) = car.delta_min;
-            ub(3:nn:end) = car.delta_max;
+            lb(8:nn:end) = car.delta_min;
+            ub(8:nn:end) = car.delta_max;
+            
+            % F_long bounds
+            lb(9:nn:end) = car.F_long_brake;
+            ub(9:nn:end) = car.F_long_accel;
             
             % v bounds
-            lb(4:nn:end) = 0;
-            ub(4:nn:end) = 100;
+            lb(10:nn:end) = 0;
+            ub(10:nn:end) = 100;
+            
+            % ddelta bounds
+            lb(11:nn:end) = -100;
+            ub(11:nn:end) = 100;
+            
+            % dF_long bounds
+            lb(12:nn:end) = -1000;
+            ub(12:nn:end) = 1000;
+            
+            % dv bounds
+            lb(13:nn:end) = -100;
+            ub(13:nn:end) = 100;
             
         end
         

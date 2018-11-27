@@ -296,16 +296,33 @@ classdef MPC < handle
         
         
         function [lb, ub] = getBounds(obj, car, rt)
-            N1 = obj.N;
-            nn = 3;
-            nOptVars = 1+N1*nn;
+            
+            nOptVars = obj.nVarsPerIter*obj.N;
             
             lb = zeros(nOptVars,1);
             ub = zeros(nOptVars,1);
             
             % theta constraint
-            lb(1) = 0;
-            ub(1) = max(rt.theta);
+            lb(1:obj.nVarsPerIter:end) = 0;
+            ub(1:obj.nVarsPerIter:end) =  max(rt.theta);
+            % X constraint
+            lb(2:obj.nVarsPerIter:end) = -1000000;
+            ub(2:obj.nVarsPerIter:end) = 1000000;
+            % Y constraint
+            lb(3:obj.nVarsPerIter:end) = -1000000;
+            ub(3:obj.nVarsPerIter:end) = 1000;
+            % phi constraint
+            lb(4:obj.nVarsPerIter:end) = 0;
+            ub(4:obj.nVarsPerIter:end) = max(rt.theta);
+            % vx constraint
+            lb(5:obj.nVarsPerIter:end) = 0;
+            ub(5:obj.nVarsPerIter:end) = max(rt.theta);
+            % vy constraint
+            lb(6:obj.nVarsPerIter:end) = 0;
+            ub(6:obj.nVarsPerIter:end) = max(rt.theta);
+            % omegaB constraint
+            lb(7:obj.nVarsPerIter:end) = 0;
+            ub(7:obj.nVarsPerIter:end) = max(rt.theta);
             
             % F_long bounds
             lb(2:nn:end) = car.F_long_brake;
