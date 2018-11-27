@@ -2,7 +2,7 @@ close all; clear all;
 
 endTime = 10;
 Ts = .1;
-N = 40;      % horizon length
+N = 10;      % horizon length
 inputFile = 'track1.txt';
 width = 12;
 nVarsPerIter = 13;
@@ -73,21 +73,22 @@ for n = 1:length(time1)
     optVar = quadprog(H,G,[],[],Aeq,Beq,lb,ub);
     
     % update variable vectors
-    mpc.thetaA = optVar(1:nVarsPerIter:end) ;
+    mpc.thetaA(1,:) = optVar(1:nVarsPerIter:end) ;
     for i = 1:N
          mpc.States(:,i) = optVar(2+(i-1)*nVarsPerIter:+7+(i-1)*nVarsPerIter);
     end
-    mpc.delta = optVar(8:nVarsPerIter:end);
-    mpc.F_long = optVar(9:nVarsPerIter:end);
-    mpc.v = optVar(10:nVarsPerIter:end) ;
-    mpc.ddelta = optVar(11:nVarsPerIter:end);
-    mpc.dF_long = optVar(12:nVarsPerIter:end);
-    mpc.dv = optVar(13:nVarsPerIter:end);
+    mpc.delta(1,:) = optVar(8:nVarsPerIter:end);
+    mpc.F_long(1,:) = optVar(9:nVarsPerIter:end);
+    mpc.v(1,:) = optVar(10:nVarsPerIter:end) ;
+    mpc.ddelta(1,:) = optVar(11:nVarsPerIter:end);
+    mpc.dF_long(1,:) = optVar(12:nVarsPerIter:end);
+    mpc.dv(1,:) = optVar(13:nVarsPerIter:end);
     
     plot(mpc.States(1,:), mpc.States(2,:), 'b.-')
     % update simulation model states using ode45
     car.update(Ts,mpc.delta(1),mpc.F_long(1)/2);
     car.plotCar();
+    drawnow();
 
     % save history of states
     X_hist = [X_hist car.X];

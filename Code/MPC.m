@@ -180,8 +180,8 @@ classdef MPC < handle
         
         function cost = cost(obj,opt)
             % weights
-            qc = 1;
-            ql = 1;
+            qc = 10;
+            ql = 10;
             gamma = 1;
             ru1 = 1;
             ru2 = 1;
