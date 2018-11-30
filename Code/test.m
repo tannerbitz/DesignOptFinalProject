@@ -1,8 +1,8 @@
 close all; clear all;
 
-endTime = 10;
-Ts = .1;
-N = 10;      % horizon length
+endTime = 1;
+Ts = .02;
+N = 40;      % horizon length
 inputFile = 'track1.txt';
 width = 12;
 nVarsPerIter = 13;

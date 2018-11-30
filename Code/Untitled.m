@@ -1,22 +1,20 @@
-clear all;
-syms theta X Y phi vx vy omegaB  delta F_long v x0 y0 theta0 del_dx del_dy del_dtheta dec_dx dec_dy dec_dtheta ql qc el0 ec0
+close all;clear all;
+R = 1/.8;
+mu = 1;
 
-optVar = [theta X Y phi vx vy omegaB delta F_long v]; 
+Fz_f = 300*9.8;
 
-del = [del_dx, del_dy, del_dtheta];
-dec = [dec_dx, dec_dy, dec_dtheta];
-
-deltaX = [X-x0; Y-y0; theta-theta0];
-
-el2 = ql*(2*el0*del*deltaX + (del*deltaX)^2);
-ec2  = qc*(2*ec0*dec*deltaX + (dec*deltaX)^2);
-
-f = el2 + ec2 ;
-df = gradient(f,optVar);
-ddf = [gradient(df(1), optVar), gradient(df(2), optVar), gradient(df(3), optVar)];
+alphaf = [-10:.1:10]*pi/180;
+C = 120000;
 
 
-% plug in x,y,theta = 0 
-df = subs(df, X, 0);
-df = subs(df, Y, 0);
-df = subs(df, theta, 0);
+for i = 1:length(alphaf)
+    falphaf = C*tan(alphaf(i));
+    if abs(alphaf(i)) < atan(3*mu*Fz_f/C)
+        f_lat(i) = -falphaf + (2 - R)/(3*mu*Fz_f)*sqrt(falphaf.^2)*falphaf - (1 - 2/3*R)/(3*mu*Fz_f)^2 * falphaf^3;
+    else
+        f_lat(i) = -sign(alphaf(i))*mu*Fz_f;
+    end
+end
+
+plot(alphaf*180/pi,f_lat)

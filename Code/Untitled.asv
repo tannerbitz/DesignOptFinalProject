@@ -1,0 +1,17 @@
+close all;clear all;
+R = .8;
+mu = 1;
+
+Fz_f = 1000;
+
+alphaf = [-5:.1:5]*pi/180;
+C = 120000;
+
+
+for i = 1:length(alphaf)
+    falphaf = C*tan(alphaf(i));
+    if ata
+    f_lat(i) = -falphaf + (2 - R)/(3*mu*Fz_f)*sqrt(falphaf.^2)*falphaf - (1 - 2/3*R)/(3*mu*Fz_f)^2 * falphaf^3;
+end
+
+plot(alphaf,f_lat)
