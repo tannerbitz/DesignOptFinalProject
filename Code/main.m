@@ -1,7 +1,7 @@
 close all; clear all;
 
 endTime = 1;
-Ts = .02;
+Ts = .1;
 N = 40;      % horizon length
 inputFile = 'track1.txt';
 width = 12;
@@ -40,7 +40,7 @@ lapCount = 0;
 %[A, B] = mpc.getIneqCons(car);
 [lb,ub] = mpc.getBounds(car,rt);
 
-for n = 1:length(time1)
+for n = 1:1 %length(time1)
     t = time1(n);
     
     % calculate cubic approximation to track over the the prediction

@@ -289,10 +289,10 @@ classdef SimModel < handle
             R_mu = obj.mu_k/obj.mu_s;
     
             if abs(alpha) <= atan(3*obj.mu_s*Fz_in/obj.C)
-                F_lat = -f_alpha + (2-R_mu)/(3*obj.mu_s*Fz_in)*abs(f_alpha)*f_alpha - ...
-                        (1-2/3*R_mu)/(3*obj.mu_s*Fz_in)^2*f_alpha^3;
+                F_lat = -f_alpha + (2-R_mu)/(3*obj.mu_s*Fz_in)*abs(f_alpha)*f_alpha ... 
+                        - (1-2/3*R_mu)/(3*obj.mu_s*Fz_in)^2*f_alpha^3;
             else
-                F_lat = -sign(alpha)*obj.mu_s*Fz_in;
+                F_lat = -sign(alpha)*obj.mu_s*R_mu*Fz_in;
             end
         end
 

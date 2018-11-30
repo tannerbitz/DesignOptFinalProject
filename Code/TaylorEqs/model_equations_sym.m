@@ -44,7 +44,7 @@ matlabFunction(statesdot, 'File', 'statesdot_fgrg');
 
 
 %% front slip, rear no slip
-Flat_f = -sign(alphaf)*mu*Fz_f;
+Flat_f = -sign(alphaf)*mu*R*Fz_f;
 Flat_r = -falphar + (2 - R)/(3*mu*Fz_r)*sqrt(falphar.^2)*falphar - (1 - 2/3*R)/(3*mu*Fz_r)^2 * falphar^3;
 
 
@@ -80,7 +80,7 @@ matlabFunction(statesdot, 'File', 'statesdot_fsrg');
 
 %% front no slip, rear slip
 Flat_f = -falphaf + (2 - R)/(3*mu*Fz_f)*sqrt(falphaf.^2)*falphaf - (1 - 2/3*R)/(3*mu*Fz_f)^2 * falphaf^3;
-Flat_r = -sign(alphar)*mu*Fz_r;
+Flat_r = -sign(alphar)*mu*R*Fz_r;
 
 Xdot = vx*cos(varphi) - vy*sin(varphi);
 Ydot = vx*sin(varphi) + vy*cos(varphi);
@@ -114,8 +114,8 @@ matlabFunction(statesdot, 'File', 'statesdot_fgrs');
 
 
 %% front slip, rear slip
-Flat_f = -sign(alphaf)*mu*Fz_f;
-Flat_r = -sign(alphar)*mu*Fz_r;
+Flat_f = -sign(alphaf)*mu*R*Fz_f;
+Flat_r = -sign(alphar)*mu*R*Fz_r;
 
 
 Xdot = vx*cos(varphi) - vy*sin(varphi);
