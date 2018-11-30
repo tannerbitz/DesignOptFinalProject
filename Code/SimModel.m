@@ -124,8 +124,8 @@ classdef SimModel < handle
             phi_dot = omegaB_in;
             vx_dot  = 1/obj.mass*(obj.Fx + obj.mass*vy_in*obj.omegaB - sign(vx_in)*.5*obj.rhoAir*obj.Cd*obj.refA*vx_in^2);
             vy_dot  = 1/obj.mass*(obj.Fy - obj.mass*vx_in*obj.omegaB);
-            omegaB_dot = 1/obj.Iz*(Ffl_lat*lf*cos(delta) + Ffr_lat*lf*cos(delta) ...
-                - Frl_lat*lr - Frr_lat*lr + (-Ffl_long*sin(delta) - Frl_long + Ffr_long*sin(delta) + Frr_long) * obj.width/2);
+            omegaB_dot = 1/obj.Iz*((Ffl_lat*cos(delta) + Ffr_lat*cos(delta) + Ffl_long*sin(delta) + Ffr_long*sin(delta))*lf  ...
+                - Frl_lat*lr - Frr_lat*lr + (-Ffl_long*cos(delta) - Frl_long + Ffr_long*cos(delta) + Frr_long) * obj.width/2);
 
             
             States_dot = [X_dot,Y_dot, phi_dot, vx_dot, vy_dot, omegaB_dot]';
@@ -149,20 +149,20 @@ classdef SimModel < handle
             
             % compute tire normal force using totoal forces from previous
             % timestep
-            Ff_z = obj.mass*9.81*obj.dm;
-            Fr_z = obj.mass*9.81*(1 - obj.dm);
+            Ff_z = obj.mass*9.81*(1 - obj.dm);
+            Fr_z = obj.mass*9.81*obj.dm;
     
             % compute tire longitudenal and lateral forces with Fiala tire
             % model
-            Ff_lat = obj.getTireForcesMassera(omegaB_in, delta, vy_in, vx_in, Ff_z, lr);
-            Fr_lat = obj.getTireForcesMassera(omegaB_in, delta, vy_in, vx_in, Fr_z, -lf);
+            Ff_lat = obj.getTireForcesMassera(omegaB_in, delta, vy_in, vx_in, Ff_z, lf);
+            Fr_lat = obj.getTireForcesMassera(omegaB_in, 0, vy_in, vx_in, Fr_z, -lr);
 
-            FF_long = F_long;
+            Ff_long = F_long;
             Fr_long = F_long;
 
             % update Fx and Fy so it can be used in the next timestep;
-            obj.Fx = Fr_long + - Ff_lat*sin(delta) + FF_long*cos(delta);
-            obj.Fy = Fr_lat + Ff_lat*cos(delta) + FF_long*sin(delta);
+            obj.Fx = Fr_long + - Ff_lat*sin(delta) + Ff_long*cos(delta);
+            obj.Fy = Fr_lat + Ff_lat*cos(delta) + Ff_long*sin(delta);
             
             % compute derivatives of vehicle states
             X_dot = vx_in*cos(phi_in) - vy_in*sin(phi_in);
@@ -170,7 +170,7 @@ classdef SimModel < handle
             phi_dot = omegaB_in;
             vx_dot  = 1/obj.mass*(obj.Fx + obj.mass*vy_in*obj.omegaB);
             vy_dot  = 1/obj.mass*(obj.Fy - obj.mass*vx_in*obj.omegaB);
-            omegaB_dot = 1/obj.Iz*(Ff_lat*lf*cos(delta) + FF_long*lf*sin(delta) - Fr_lat*lr);
+            omegaB_dot = 1/obj.Iz*(Ff_lat*lf*cos(delta) + Ff_long*lf*sin(delta) - Fr_lat*lr);
 
             
             States_dot = [X_dot,Y_dot, phi_dot, vx_dot, vy_dot, omegaB_dot]';
@@ -215,12 +215,12 @@ classdef SimModel < handle
             
             else
                 f = statesdot_fsrs(F_long,Fz_f,Fz_r, obj.Iz, delta,lf,lr,obj.mass, obj.mu_s, obj.omegaB, obj.phi,obj.vx,obj.vy);
-                A = A_fsrs(Fz_f,Fz_r, obj.Iz,delta,lf,lr,obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
-                B = B_fsrs(F_long,Fz_f,obj.Iz, delta,lf,lr, obj.mass, obj.mu_s, obj.omegaB, obj.vx,obj.vy);
+                A = A_fsrs(Fz_f,Fz_r, obj.Iz,R,delta,lf,lr,obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
+                B = B_fsrs(F_long,Fz_f,obj.Iz,R, delta,lf,lr, obj.mass, obj.mu_s, obj.omegaB, obj.vx,obj.vy);
             end  
             
             states = [obj.X; obj.Y; obj.phi; obj.vx; obj.vy; obj.omegaB];
-            inputs = [F_long; delta];
+            inputs = [delta; F_long];
             Ts = 0.05;
             sys = ss(A, B, eye(6), []);
             sys2 = c2d(sys, Ts);
