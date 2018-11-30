@@ -127,6 +127,7 @@ classdef SimModel < handle
             omegaB_dot = 1/obj.Iz*( (Ffl_long+Ffr_long)*sin(delta)*lf + (Ffr_long-Ffl_long)*cos(delta)*obj.width/2 ...
                                    +(Ffl_lat+Ffr_lat)*cos(delta)*lf + (Ffl_lat-Ffr_lat)*sin(delta)*obj.width/2 ...
                                    - (Frr_lat + Frl_lat)*lr + (Frr_long+Frl_long)*obj.width/2 );
+            
             States_dot = [X_dot,Y_dot, phi_dot, vx_dot, vy_dot, omegaB_dot]';
             
         end

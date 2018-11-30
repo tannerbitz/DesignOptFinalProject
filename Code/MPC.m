@@ -83,8 +83,8 @@ classdef MPC < handle
         
         function [] = linearizeModel(obj, car)
             
-            Fz_f = car.mass*9.81*car.dm;
-            Fz_r = car.mass*9.81*(1-car.dm);
+            Fz_f = car.mass*9.81*(1-car.dm);
+            Fz_r = car.mass*9.81*(car.dm);
             
             N1 = obj.N;
             for i = 1:N1
@@ -94,8 +94,8 @@ classdef MPC < handle
                 alphaFMax = atan2(3*car.mu_s*Fz_f, car.C);
                 alphaRMax = atan2(3*car.mu_s*Fz_r, car.C);
                 
-                alphaf = atan2(obj.States(5, i) + lr*obj.States(6, i), obj.States(4, i)) - obj.delta(i);
-                alphar = atan2(obj.States(5, i) - lf*obj.States(6, i), obj.States(4, i));
+                alphaf = atan2(obj.States(5, i) + lf*obj.States(6, i), obj.States(4, i)) - obj.delta(i);
+                alphar = atan2(obj.States(5, i) - lrobj.States(6, i), obj.States(4, i));
                 
                 %%%   INPUT VECTOR for f, A, B %%%%%
                 %    C,F_long,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy
