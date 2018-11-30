@@ -19,6 +19,8 @@ classdef MPC < handle
         Ts        % sampling period
         N         % Horizon length
         
+        slipflag
+        
     end
     
     methods
@@ -123,18 +125,22 @@ classdef MPC < handle
                 if (abs(alphaf) < alphaFMax  && abs(alphar) < alphaRMax) % front grip, rear grip
                     Ac = A_fgrg(C,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
                     Bc = B_fgrg(C,F_long,Fz_f,Iz,R,delta_in,lf,lr,m,mu,omegaB,vx,vy);
+                    obj.slipflag = 1;
                     
                 elseif (abs(alphaf) >= alphaFMax && abs(alphar) < alphaRMax) % front slip, rear grip
                     Ac = A_fsrg(C,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
                     Bc = B_fsrg(F_long,Fz_f,Iz,R,delta_in,lf,lr,m,mu,omegaB,vx,vy);
+                    obj.slipflag = 2;
                     
                 elseif (abs(alphaf) < alphaFMax && abs(alphar) >= alphaRMax) % front grip, rear slip
                     Ac = A_fgrs(C,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
                     Bc = B_fgrs(C,F_long,Fz_f,Iz,R,delta_in,lf,lr,m,mu,omegaB,vx,vy);
+                    obj.slipflag = 3;
                     
                 elseif (abs(alphaf) >= alphaFMax && abs(alphar) >= alphaRMax) % front slip, rear slip
                     Ac = A_fsrs(Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
                     Bc = B_fsrs(F_long,Fz_f,Iz,R,delta_in,lf,lr,m,mu,omegaB,vx,vy);
+                    obj.slipflag = 4;
                 end
                 
                 % Convert To Discrete
@@ -154,10 +160,10 @@ classdef MPC < handle
             G = zeros(obj.nVarsPerIter*obj.N,1);
             
             % set weights cost functions terms
-            qc = 10000;
+            qc = 100;
             ql = 100;
-            gamma = 100;
-            rdelta = 1;
+            gamma = 1;
+            rdelta = 100;
             rF_long = 1;
             rv = 1;
             
@@ -180,11 +186,11 @@ classdef MPC < handle
         
         function cost = cost(obj,opt)
             % weights
-            qc = 10;
-            ql = 10;
-            gamma = 1;
+            qc = 100;
+            ql = 100;
+            gamma = .001;
             ru1 = 1;
-            ru2 = 1;
+            ru2 = .1;
             rv = 1;
             R = [ru1, 0 , 0;
                 0, ru2, 0;

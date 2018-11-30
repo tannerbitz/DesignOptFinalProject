@@ -15,8 +15,8 @@ Flat_r = -falphar + (2 - R)/(3*mu*Fz_r)*sqrt(falphar.^2)*falphar - (1 - 2/3*R)/(
 Xdot = vx*cos(varphi) - vy*sin(varphi);
 Ydot = vx*sin(varphi) + vy*cos(varphi);
 varphidot = omegaB;
-vxdot = 1/m*(Flong - Flat_f*sin(delta) + Flong*cos(delta) + m*vy*omegaB);
-vydot = 1/m*(Flat_r + Flat_f*cos(delta) + Flong*sin(delta) - m*vx*omegaB);
+vxdot = 1/m*(Flong - Flat_f*sin(delta) + Flong*cos(delta)); % + m*vy*omegaB);
+vydot = 1/m*(Flat_r + Flat_f*cos(delta) + Flong*sin(delta)); % - m*vx*omegaB);
 omegaBdot = 1/Iz*(Flat_f*lf*cos(delta) + Flong*sin(delta)*lf - Flat_r*lr);
 
 
@@ -34,8 +34,8 @@ A = [diff(statesdot, X), ...
      diff(statesdot, vy), ...
      diff(statesdot, omegaB)];
 
-B = [diff(statesdot, Flong), ...
-     diff(statesdot, delta)];
+B = [diff(statesdot, delta), ...
+     diff(statesdot, Flong)];
 
 
 matlabFunction(A, 'File', 'A_fgrg');
@@ -51,8 +51,8 @@ Flat_r = -falphar + (2 - R)/(3*mu*Fz_r)*sqrt(falphar.^2)*falphar - (1 - 2/3*R)/(
 Xdot = vx*cos(varphi) - vy*sin(varphi);
 Ydot = vx*sin(varphi) + vy*cos(varphi);
 varphidot = omegaB;
-vxdot = 1/m*(Flong - Flat_f*sin(delta) + Flong*cos(delta) + m*vy*omegaB);
-vydot = 1/m*(Flat_r + Flat_f*cos(delta) + Flong*sin(delta) - m*vx*omegaB);
+vxdot = 1/m*(Flong - Flat_f*sin(delta) + Flong*cos(delta)); % + m*vy*omegaB);
+vydot = 1/m*(Flat_r + Flat_f*cos(delta) + Flong*sin(delta)); % - m*vx*omegaB);
 omegaBdot = 1/Iz*(Flat_f*lf*cos(delta) + Flong*sin(delta)*lf - Flat_r*lr);
 
 
@@ -70,8 +70,8 @@ A = [diff(statesdot, X), ...
      diff(statesdot, vy), ...
      diff(statesdot, omegaB)];
 
-B = [diff(statesdot, Flong), ...
-     diff(statesdot, delta)];
+B = [diff(statesdot, delta), ...
+     diff(statesdot, Flong)];
 
 
 matlabFunction(A, 'File', 'A_fsrg');
@@ -85,8 +85,8 @@ Flat_r = -sign(alphar)*mu*R*Fz_r;
 Xdot = vx*cos(varphi) - vy*sin(varphi);
 Ydot = vx*sin(varphi) + vy*cos(varphi);
 varphidot = omegaB;
-vxdot = 1/m*(Flong - Flat_f*sin(delta) + Flong*cos(delta) + m*vy*omegaB);
-vydot = 1/m*(Flat_r + Flat_f*cos(delta) + Flong*sin(delta) - m*vx*omegaB);
+vxdot = 1/m*(Flong - Flat_f*sin(delta) + Flong*cos(delta)); % + m*vy*omegaB);
+vydot = 1/m*(Flat_r + Flat_f*cos(delta) + Flong*sin(delta)); % - m*vx*omegaB);
 omegaBdot = 1/Iz*(Flat_f*lf*cos(delta) + Flong*sin(delta)*lf - Flat_r*lr);
 
 
@@ -104,8 +104,8 @@ A = [diff(statesdot, X), ...
      diff(statesdot, vy), ...
      diff(statesdot, omegaB)];
 
-B = [diff(statesdot, Flong), ...
-     diff(statesdot, delta)];
+B = [diff(statesdot, delta), ...
+     diff(statesdot, Flong)];
 
 
 matlabFunction(A, 'File', 'A_fgrs');
@@ -121,8 +121,8 @@ Flat_r = -sign(alphar)*mu*R*Fz_r;
 Xdot = vx*cos(varphi) - vy*sin(varphi);
 Ydot = vx*sin(varphi) + vy*cos(varphi);
 varphidot = omegaB;
-vxdot = 1/m*(Flong - Flat_f*sin(delta) + Flong*cos(delta) + m*vy*omegaB);
-vydot = 1/m*(Flat_r + Flat_f*cos(delta) + Flong*sin(delta) - m*vx*omegaB);
+vxdot = 1/m*(Flong - Flat_f*sin(delta) + Flong*cos(delta)); % + m*vy*omegaB);
+vydot = 1/m*(Flat_r + Flat_f*cos(delta) + Flong*sin(delta)); % - m*vx*omegaB);
 omegaBdot = 1/Iz*(Flat_f*lf*cos(delta) + Flong*sin(delta)*lf - Flat_r*lr);
 
 
@@ -140,8 +140,8 @@ A = [diff(statesdot, X), ...
      diff(statesdot, vy), ...
      diff(statesdot, omegaB)];
 
-B = [diff(statesdot, Flong), ...
-     diff(statesdot, delta)];
+B = [diff(statesdot, delta), ...
+     diff(statesdot, Flong)];
 
 
 matlabFunction(A, 'File', 'A_fsrs');

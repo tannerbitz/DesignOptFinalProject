@@ -1,7 +1,7 @@
 close all; clear all;
 
-endTime = 1;
-Ts = .1;
+endTime = 10;
+Ts = .05;
 N = 40;      % horizon length
 inputFile = 'track1.txt';
 width = 12;
@@ -34,13 +34,17 @@ omegaB_hist = [];
 F_long_hist = [];
 delta_hist  = [];
 thetaA_hist = [];
+v_hist = [];
+slipflag_hist = [];
 
 lapCount = 0;
 
 %[A, B] = mpc.getIneqCons(car);
 [lb,ub] = mpc.getBounds(car,rt);
 
-for n = 1:1 %length(time1)
+delta_old = 0;
+
+for n = 1:length(time1)
     t = time1(n);
     
     % calculate cubic approximation to track over the the prediction
@@ -70,7 +74,13 @@ for n = 1:1 %length(time1)
     [Aeq, Beq] = mpc.getEqualityCons();
     [G,H] = mpc.getCostMatrices(ax, ay, bx, by, cx, cy, dx, dy);
     
+    lb(8) = delta_old - 1*pi/180;
+    ub(8) = delta_old + 1*pi/180;
+    
+    
     optVar = quadprog(H,G,[],[],Aeq,Beq,lb,ub);
+    
+    delta_old = optVar(8);
     
     % update variable vectors
     mpc.thetaA(1,:) = optVar(1:nVarsPerIter:end) ;
@@ -84,10 +94,15 @@ for n = 1:1 %length(time1)
     mpc.dF_long(1,:) = optVar(12:nVarsPerIter:end);
     mpc.dv(1,:) = optVar(13:nVarsPerIter:end);
     
-    plot(mpc.States(1,:), mpc.States(2,:), 'b.-')
     % update simulation model states using ode45
     car.update(Ts,mpc.delta(1),mpc.F_long(1)/2);
-    car.plotCar();
+    if n > 1
+        children = get(gca, 'children');
+        delete(children(1));
+    end
+	car.plotCar();
+    plot(mpc.States(1,:), mpc.States(2,:), 'b.-')
+    axis([100 150 -5 30])
     drawnow();
 
     % save history of states
@@ -100,53 +115,55 @@ for n = 1:1 %length(time1)
     F_long_hist = [F_long_hist mpc.F_long(1)];
     delta_hist  = [delta_hist mpc.delta(1)];
     thetaA_hist = [thetaA_hist, mpc.thetaA(1)];
+    v_hist = [v_hist, mpc.v(1)];
+    slipflag_hist = [slipflag_hist, mpc.slipflag];
     
     % set the new linearization states for the MPC controller
     States = [car.X,car.Y, car.phi,car.vx,car.vy,car.omegaB];
     mpc.setLinPoints(States);
     
 end
-%%
-%close all 
-figure
-plot(time1, vx_hist);
-hold on
-plot(time1, vy_hist);
-hold off
-xlabel('Time (s)')
-ylabel('Velocity (m/s)')
-title('Velocity Components in Body Frame')
-legend('v_x', 'v_y')
-
-figure
-plot(time1, X_hist)
-hold on
-plot(time1, Y_hist)
-hold off
-xlabel('Time (s)')
-ylabel('Position (m)')
-title('X and Y Parametric Movements')
-legend('X', 'Y')
-
-figure
-plot(time1, F_long_hist);
-xlabel('Time (s)')
-ylabel('Force (N)')
-title('Longitudinal Force on Each Wheel')
-
-
-figure
-plot(time1, delta_hist*180/pi);
-xlabel('Time (s)')
-ylabel('Steering Angle (deg)')
-title('Steering Angle')
-
-figure
-plot(time1, phi_hist)
-hold on
-plot(time1, omegaB_hist)
-hold off
-xlabel('Time (s)')
-ylabel('Angle/Anglular Rate')
-title('Global Angle and Angular Rate')
-legend({'$\varphi$', '$\omega_B$'}, 'Interpreter', 'latex')
+% %%
+% %close all 
+% figure
+% plot(time1, vx_hist);
+% hold on
+% plot(time1, vy_hist);
+% hold off
+% xlabel('Time (s)')
+% ylabel('Velocity (m/s)')
+% title('Velocity Components in Body Frame')
+% legend('v_x', 'v_y')
+% 
+% figure
+% plot(time1, X_hist)
+% hold on
+% plot(time1, Y_hist)
+% hold off
+% xlabel('Time (s)')
+% ylabel('Position (m)')
+% title('X and Y Parametric Movements')
+% legend('X', 'Y')
+% 
+% figure
+% plot(time1, F_long_hist);
+% xlabel('Time (s)')
+% ylabel('Force (N)')
+% title('Longitudinal Force on Each Wheel')
+% 
+% 
+% figure
+% plot(time1, delta_hist*180/pi);
+% xlabel('Time (s)')
+% ylabel('Steering Angle (deg)')
+% title('Steering Angle')
+% 
+% figure
+% plot(time1, phi_hist)
+% hold on
+% plot(time1, omegaB_hist)
+% hold off
+% xlabel('Time (s)')
+% ylabel('Angle/Anglular Rate')
+% title('Global Angle and Angular Rate')
+% legend({'$\varphi$', '$\omega_B$'}, 'Interpreter', 'latex')
