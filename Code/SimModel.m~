@@ -124,9 +124,8 @@ classdef SimModel < handle
             phi_dot = omegaB_in;
             vx_dot  = 1/obj.mass*(obj.Fx + obj.mass*vy_in*obj.omegaB - sign(vx_in)*.5*obj.rhoAir*obj.Cd*obj.refA*vx_in^2);
             vy_dot  = 1/obj.mass*(obj.Fy - obj.mass*vx_in*obj.omegaB);
-            omegaB_dot = 1/obj.Iz*( (Ffl_long+Ffr_long)*sin(delta)*lf + (Ffr_long-Ffl_long)*cos(delta)*obj.width/2 ...
-                                   +(Ffl_lat+Ffr_lat)*cos(delta)*lf + (Ffl_lat-Ffr_lat)*sin(delta)*obj.width/2 ...
-                                   - (Frr_lat + Frl_lat)*lr + (Frr_long+Frl_long)*obj.width/2 );
+            omegaB_dot = 1/obj.Iz*( (Ffl_long + Ffr_long)*sin(delta)*lf + (Ffr_long-Ffl_long)*cos(delta)*width ...
+                          
             
             States_dot = [X_dot,Y_dot, phi_dot, vx_dot, vy_dot, omegaB_dot]';
             
