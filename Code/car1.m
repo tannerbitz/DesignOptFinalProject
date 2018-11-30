@@ -13,10 +13,10 @@ car.Iw     = 1;                                               % tire/wheel/drive
 car.mu_s   = 1;                                               % kinetic road/tire friction coefficient
 car.mu_k   = 0.8;                                             % static road/tire friction coefficient
 car.C      = 120000;                                          % tire stiffness   (N/rad)
-car.F_long_accel   = 1000;                                    % max (positive) acceleration force on each wheel (N)
+car.F_long_accel   = 0000;                                    % max (positive) acceleration force on each wheel (N)
 car.F_long_brake   = -30000;                                   % max (negative) braking force on each wheel (N)
-car.delta_max = 20*pi/180;
-car.delta_min = -20*pi/180;
+car.delta_max = 10*pi/180;
+car.delta_min = -10*pi/180;
 car.v_max = 1;
 car.v_min = 0;
 

@@ -127,7 +127,6 @@ classdef SimModel < handle
             omegaB_dot = 1/obj.Iz*( (Ffl_long+Ffr_long)*sin(delta)*lf + (Ffr_long-Ffl_long)*cos(delta)*obj.width/2 ...
                                    +(Ffl_lat+Ffr_lat)*cos(delta)*lf + (Ffl_lat-Ffr_lat)*sin(delta)*obj.width/2 ...
                                    - (Frr_lat + Frl_lat)*lr + (Frr_long+Frl_long)*obj.width/2 );
-            
             States_dot = [X_dot,Y_dot, phi_dot, vx_dot, vy_dot, omegaB_dot]';
             
         end
@@ -154,8 +153,8 @@ classdef SimModel < handle
     
             % compute tire longitudenal and lateral forces with Fiala tire
             % model
-            Ff_lat = obj.getTireForcesMassera(omegaB_in, delta, vy_in, vx_in, Ff_z, lr);
-            Fr_lat = obj.getTireForcesMassera(omegaB_in, delta, vy_in, vx_in, Fr_z, -lf);
+            Ff_lat = obj.getTireForcesMassera(omegaB_in, delta, vy_in, vx_in, Ff_z, lf);
+            Fr_lat = obj.getTireForcesMassera(omegaB_in, 0, vy_in, vx_in, Fr_z, -lr);
 
             Ff_long = F_long;
             Fr_long = F_long;
@@ -215,12 +214,12 @@ classdef SimModel < handle
             
             else
                 f = statesdot_fsrs(F_long,Fz_f,Fz_r, obj.Iz, delta,lf,lr,obj.mass, obj.mu_s, obj.omegaB, obj.phi,obj.vx,obj.vy);
-                A = A_fsrs(Fz_f,Fz_r, obj.Iz,delta,lf,lr,obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
-                B = B_fsrs(F_long,Fz_f,obj.Iz, delta,lf,lr, obj.mass, obj.mu_s, obj.omegaB, obj.vx,obj.vy);
+                A = A_fsrs(Fz_f,Fz_r, obj.Iz,R,delta,lf,lr,obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
+                B = B_fsrs(F_long,Fz_f,obj.Iz,R, delta,lf,lr, obj.mass, obj.mu_s, obj.omegaB, obj.vx,obj.vy);
             end  
             
             states = [obj.X; obj.Y; obj.phi; obj.vx; obj.vy; obj.omegaB];
-            inputs = [F_long; delta];
+            inputs = [delta; F_long];
             Ts = 0.05;
             sys = ss(A, B, eye(6), []);
             sys2 = c2d(sys, Ts);

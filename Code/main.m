@@ -1,7 +1,7 @@
 close all; clear all;
 
-endTime = 10;
-Ts = .05;
+endTime = 4;
+Ts = .1;
 N = 40;      % horizon length
 inputFile = 'track1.txt';
 width = 12;
@@ -36,6 +36,8 @@ delta_hist  = [];
 thetaA_hist = [];
 v_hist = [];
 slipflag_hist = [];
+Fx_hist = [];
+Fy_hist = [];
 
 lapCount = 0;
 
@@ -74,9 +76,8 @@ for n = 1:length(time1)
     [Aeq, Beq] = mpc.getEqualityCons();
     [G,H] = mpc.getCostMatrices(ax, ay, bx, by, cx, cy, dx, dy);
     
-    lb(8) = delta_old - 1*pi/180;
-    ub(8) = delta_old + 1*pi/180;
-    
+    lb(8) = max(delta_old - 5*pi/180,car.delta_min);
+    ub(8) = min(delta_old + 5*pi/180,car.delta_max);  
     
     optVar = quadprog(H,G,[],[],Aeq,Beq,lb,ub);
     
@@ -95,14 +96,19 @@ for n = 1:length(time1)
     mpc.dv(1,:) = optVar(13:nVarsPerIter:end);
     
     % update simulation model states using ode45
-    car.update(Ts,mpc.delta(1),mpc.F_long(1)/2);
+    car.updateOneTrack(Ts,mpc.delta(1),mpc.F_long(1));
+    
+    vtot = norm([car.vx,car.vy]);
+    
     if n > 1
         children = get(gca, 'children');
         delete(children(1));
+        delete(children(2));
     end
 	car.plotCar();
     plot(mpc.States(1,:), mpc.States(2,:), 'b.-')
     axis([100 150 -5 30])
+    title(['velocity = ', num2str(vtot)]);
     drawnow();
 
     % save history of states
@@ -118,11 +124,16 @@ for n = 1:length(time1)
     v_hist = [v_hist, mpc.v(1)];
     slipflag_hist = [slipflag_hist, mpc.slipflag];
     
+    Fx_hist = [Fx_hist car.Fx];
+    Fy_hist = [Fy_hist car.Fy];
+    
     % set the new linearization states for the MPC controller
     States = [car.X,car.Y, car.phi,car.vx,car.vy,car.omegaB];
     mpc.setLinPoints(States);
     
 end
+figure
+plot([phi_hist, mpc.States(3,:)]*180/pi)
 % %%
 % %close all 
 % figure
