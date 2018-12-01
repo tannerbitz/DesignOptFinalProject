@@ -1,7 +1,7 @@
 close all; clear all;
 
 endTime = 20;
-Ts = .01;
+Ts = .02;
 N = 40;      % horizon length
 inputFile = 'track1.txt';
 width = 12;
@@ -16,10 +16,10 @@ X0 = rt.X(1);
 Y0 = rt.Y(1);
 
 % intialize sim model physical properties and states
-car = car1();  
+car = car1();
 car.X = X0;
 car.Y = Y0;
-car.vx = 15;
+car.vx = 10;
 
 % initalize Model Pridictive Controller
 mpc = MPC(Ts,N,car);
@@ -46,7 +46,7 @@ lapCount = 0;
 
 delta_old = 0;
 
-for n = 1:length(time1)
+for n = 1:4 %length(time1)
     t = time1(n);
     
     % calculate cubic approximation to track over the the prediction
@@ -55,9 +55,9 @@ for n = 1:length(time1)
     [theta1,X1,Y1,lapCount] = rt.getXY(theta1,lapCount);
     [ax,bx,cx,dx,ay,by,cy,dy] = rt.getCubicPolynomial(theta1,X1,Y1);
     
-    %linearize dynamics model 
+    %linearize dynamics model
     mpc.linearizeModel(car)
-   
+    
     % make optVar vector
     optVar = zeros(nVarsPerIter*N, 1);
     optVar(1:nVarsPerIter:end) = mpc.thetaA;
@@ -82,7 +82,7 @@ for n = 1:length(time1)
     % update variable vectors
     mpc.thetaA(1,:) = optVar(1:nVarsPerIter:end) ;
     for i = 1:N
-         mpc.States(:,i) = optVar(2+(i-1)*nVarsPerIter:+7+(i-1)*nVarsPerIter);
+        mpc.States(:,i) = optVar(2+(i-1)*nVarsPerIter:+7+(i-1)*nVarsPerIter);
     end
     mpc.delta(1,:) = optVar(8:nVarsPerIter:end);
     mpc.F_long(1,:) = optVar(9:nVarsPerIter:end);
@@ -93,27 +93,28 @@ for n = 1:length(time1)
     
     % update simulation model states using ode45
     car.updateOneTrack(Ts,mpc.delta(1),mpc.F_long(1));
-
-
+    
+    
     vtot = norm([car.vx,car.vy]);
     
     if n > 1
         children = get(gca, 'children');
         delete(children(1));
         delete(children(2));
-         delete(children(3));
+        delete(children(3));
+        delete(children(4));
+        
     end
     
     [~, xtheta, ytheta, ~] = rt.getXY(mpc.thetaA, 1);
     
-	car.plotCar();
+    car.plotCar();
     
     plot(xtheta, ytheta, 'r*')
     plot(mpc.States(1,:), mpc.States(2,:), 'b.-')
     axis([100 150 -5 30])
     title(['velocity = ', num2str(vtot)]);
-    drawnow();
-
+    
     
     
     % save history of states
@@ -136,10 +137,12 @@ for n = 1:length(time1)
     States = [car.X,car.Y, car.phi,car.vx,car.vy,car.omegaB];
     mpc.setLinPoints(States);
     
+    plot(mpc.States(1,:), mpc.States(2,:), 'g.-')
+    drawnow();
 end
 
 % %%
-% %close all 
+% %close all
 % figure
 % plot(time1, vx_hist);
 % hold on
@@ -149,7 +152,7 @@ end
 % ylabel('Velocity (m/s)')
 % title('Velocity Components in Body Frame')
 % legend('v_x', 'v_y')
-% 
+%
 % figure
 % plot(time1, X_hist)
 % hold on
@@ -159,20 +162,20 @@ end
 % ylabel('Position (m)')
 % title('X and Y Parametric Movements')
 % legend('X', 'Y')
-% 
+%
 % figure
 % plot(time1, F_long_hist);
 % xlabel('Time (s)')
 % ylabel('Force (N)')
 % title('Longitudinal Force on Each Wheel')
-% 
-% 
+%
+%
 % figure
 % plot(time1, delta_hist*180/pi);
 % xlabel('Time (s)')
 % ylabel('Steering Angle (deg)')
 % title('Steering Angle')
-% 
+%
 % figure
 % plot(time1, phi_hist)
 % hold on

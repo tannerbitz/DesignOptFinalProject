@@ -20,6 +20,10 @@ classdef MPC < handle
         Ts        % sampling period
         N         % Horizon length
         
+        StatesN
+        deltaN
+        F_longN
+        
         slipflag
         
     end
@@ -42,12 +46,16 @@ classdef MPC < handle
             obj.States(6,:) = car.omegaB;
             obj.delta       = zeros(1,N); %[car.F_long, car.delta]';
             obj.F_long       = 400*ones(1,N); %[car.F_long, car.delta]';
-            obj.v           = 10*ones(1,N);
+            obj.v           = car.vx*ones(1,N);
             obj.ddelta      = zeros(1,N);
             obj.dF_long      = zeros(1,N);
             obj.dv          = zeros(1,N);
             
             obj.nVarsPerIter = 13;
+            
+            obj.StatesN = obj.States(:,N);
+            obj.deltaN = obj.delta(N);
+            obj.F_longN = obj.F_long(N);
             
             
         end
@@ -57,6 +65,7 @@ classdef MPC < handle
             nVarsPerIter = obj.nVarsPerIter;
             
             U(:,1) = [obj.delta(N1); obj.F_long(N1)]; %[delta, F_long]
+            UN = [obj.deltaN; obj.F_longN];
             
             % set initial states to current sim states
             obj.States(:,1) = States;
@@ -65,7 +74,7 @@ classdef MPC < handle
                 obj.States(:,i) = obj.States(:,i+1);
             end
 
-            obj.States(:,N1) = obj.States(:,N1) + obj.Ts*(obj.A(:,:,N1)*(obj.States(:,N1)-StatesN1_old) + obj.B(:,:,N1)*(U-UN1_old) + obj.f);
+            obj.States(:,N1) = obj.States(:,N1) + obj.Ts*( obj.f(:,N1));% + obj.A(:,:,N1)*(obj.States(:,N1)-obj.StatesN) + obj.B(:,:,N1)*(U-UN) );
 
             % shift optimization vars by one sampling period to use as
             % linearization points and inital guess in fmincon
@@ -78,6 +87,10 @@ classdef MPC < handle
                 obj.dF_long(i) = obj.dF_long(i+1);
                 obj.dv(i) = obj.dv(i+1);
             end
+            
+            obj.StatesN = obj.States(:,N1);
+            obj.deltaN = obj.delta(N1);
+            obj.F_longN = obj.F_long(N1);
             
         end
         
@@ -165,11 +178,11 @@ classdef MPC < handle
             
             % set weights cost functions terms
             qc = 100;
-            ql = 100;
-            gamma = 10;
-            rdelta = 10;
+            ql = 10;
+            gamma = 1;
+            rdelta = 1;
             rF_long = 1;
-            rv = 10;
+            rv = 1;
             
             for i = 1:obj.N
                 X0 = obj.States(1,i);
