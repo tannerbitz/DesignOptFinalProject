@@ -1,0 +1,6 @@
+*.m~
+*.asv
+/Code/*.m~
+/Code/*.asv
+/Code/TaylorEqs/*.m~
+/Code/TaylorEqs/*.asv

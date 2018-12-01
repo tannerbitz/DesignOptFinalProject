@@ -178,75 +178,13 @@ classdef SimModel < handle
         end
 
 
-        function [] = updateOneTrackLinear(obj, deltaT, delta, F_long)
-
-            addpath ./TaylorEqs/
-
-            Fz_f = obj.mass*9.81*obj.dm;
-            Fz_r = obj.mass*9.81*(1-obj.dm);
-
-            R = obj.mu_k/obj.mu_s;
-            alphaFMax = atan2(3*obj.mu_s*Fz_f, obj.C);
-            alphaRMax = atan2(3*obj.mu_s*Fz_r, obj.C);
-
-            % compute lengths from cg to front and rear end
-            lf = obj.dm*obj.length;
-            lr = (1-obj.dm)*obj.length;
-
-            alphaf = atan2(obj.vy + lr*obj.omegaB, obj.vx) - delta;
-            alphar = atan2(obj.vy - lf*obj.omegaB, obj.vx);
-
-            vx = obj.vx;
-            vy = obj.vy;
-            if abs(obj.vx) < 1 %10^-8
-                vx = 1; % 1e-8;
-            end
-            if abs(obj.vy) < 10^-8
-                vy = 10^-8;
-            end
-
-
-            if (abs(alphaf) < alphaFMax  && abs(alphar) < alphaRMax) % front grip, rear grip
-                f = statesdot_fgrg(C,Flong,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy);
-                Ac = A_fgrg(obj.C,Fz_f,Fz_r,obj.Iz,R,delta,lf,lr,obj.mass,obj.mu_s,obj.omegaB,obj.phi,vx,vy);
-                               %C,Fz_f,Fz_r,    Iz,R,delta,lf,lr,       m,      mu,    omegaB, varphi,vx,vy)
-                Bc = B_fgrg(obj.C,F_long,Fz_f,obj.Iz,R,delta,lf,obj.mass,obj.mu_s,obj.omegaB,vx,vy);
-                               %C, Flong,Fz_f,    Iz,R,delta,lf,       m,    mu,      omegaB,vx,vy
-
-            elseif (abs(alphaf) >= alphaFMax && abs(alphar) < alphaRMax) % front slip, rear grip
-                Ac = A_fsrg(obj.C,Fz_f,Fz_r,obj.Iz,R,delta,lf,lr,obj.mass,obj.mu_s,obj.omegaB,obj.phi,vx,vy);
-                               %C,Fz_f,Fz_r,    Iz,R,delta,lf,lr,       m,    mu,      omegaB, varphi,vx,vy
-                Bc = B_fsrg(F_long,Fz_f,obj.Iz,R,delta,lf,obj.mass,obj.mu_s,obj.omegaB,vx,vy);
-                           % Flong,Fz_f,    Iz,R,delta,lf,       m,      mu,    omegaB,vx,vy
-
-            elseif (abs(alphaf) < alphaFMax && abs(alphar) >= alphaRMax) % front grip, rear slip
-                Ac = A_fgrs(obj.C,Fz_f,Fz_r,obj.Iz,R,delta,lf,lr,obj.mass,obj.mu_s,obj.omegaB,obj.phi,vx,vy);
-                            %   C,Fz_f,Fz_r,    Iz,R,delta,lf,lr,       m,    mu,      omegaB, varphi,vx,vy
-                Bc = B_fgrs(obj.C,F_long,Fz_f,obj.Iz,R,delta,lf,obj.mass,obj.mu_s,obj.omegaB,vx,vy);
-                             %  C, Flong,Fz_f,    Iz,R,delta,lf,       m,    mu,      omegaB,vx,vy
-
-            elseif (abs(alphaf) >= alphaFMax && abs(alphar) >= alphaRMax) % front slip, rear slip
-                Ac = A_fsrs(Fz_f,Fz_r,obj.Iz,R,delta,lf,lr,obj.mass,obj.mu_s,obj.omegaB,obj.phi,vx,vy);
-                           %Fz_f,Fz_r,    Iz,R,delta,lf,lr,       m,      mu,    omegaB, varphi,vx,vy
-                Bc = B_fsrs(F_long,Fz_f,obj.Iz,R,delta,lf,obj.mass,obj.mu_s,obj.omegaB,vx,vy);
-                            %Flong,Fz_f,    Iz,R,delta,lf,       m,    mu,      omegaB,vx,vy
-
-            end
+        function [] = updateOneTrackLinear(obj, deltaT, delta, F_long ,mpcobj)
 
             % Convert To Discrete
             states = [obj.X; obj.Y; obj.phi; obj.vx; obj.vy; obj.omegaB];
             inputs = [delta; F_long];
 
-            %             A = expm(Ac*deltaT);
-            %             phitemp = zeros(size(Ac));
-            %             for k = 0:1:10
-            %                 phitemp = phitemp + Ac^k*deltaT^(k+1)/(factorial(k+1));
-            %             end
-            %             B = phitemp*Bc;
-            %
-            %             states = A*states + B*inputs;
-
-            states = states + deltaT*(Ac*states + Bc*inputs);
+            states = states + mpcobj.Ts*(mpcobj.f(:,1));
 
             obj.X = states(1);
             obj.Y = states(2);

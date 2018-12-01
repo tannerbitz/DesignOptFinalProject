@@ -3,6 +3,7 @@ classdef MPC < handle
         
         A         % (6x6xN)
         B         % (6x2xN)
+        f
         
         % Optimization variables
         thetaA    % (1xN) 
@@ -95,7 +96,7 @@ classdef MPC < handle
                 alphaRMax = atan2(3*car.mu_s*Fz_r, car.C);
                 
                 alphaf = atan2(obj.States(5, i) + lf*obj.States(6, i), obj.States(4, i)) - obj.delta(i);
-                alphar = atan2(obj.States(5, i) - lrobj.States(6, i), obj.States(4, i));
+                alphar = atan2(obj.States(5, i) - lr*obj.States(6, i), obj.States(4, i));
                 
                 %%%   INPUT VECTOR for f, A, B %%%%%
                 %    C,F_long,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy
@@ -123,33 +124,37 @@ classdef MPC < handle
                 end
                 
                 if (abs(alphaf) < alphaFMax  && abs(alphar) < alphaRMax) % front grip, rear grip
-                    Ac = A_fgrg(C,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
-                    Bc = B_fgrg(C,F_long,Fz_f,Iz,R,delta_in,lf,m,mu,omegaB,vx,vy);
+                    obj.A(:,:,i) = A_fgrg(C,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    obj.B(:,:,i) = B_fgrg(C,F_long,Fz_f,Iz,R,delta_in,lf,m,mu,omegaB,vx,vy);
+                    obj.f(:,i) = statesdot_fgrg(C,F_long,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
                     obj.slipflag = 1;
                     
                 elseif (abs(alphaf) >= alphaFMax && abs(alphar) < alphaRMax) % front slip, rear grip
-                    Ac = A_fsrg(C,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
-                    Bc = B_fsrg(F_long,Fz_f,Iz,R,delta_in,lf,m,mu,omegaB,vx,vy);
+                    obj.A(:,:,i) = A_fsrg(C,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    obj.B(:,:,i) = B_fsrg(F_long,Fz_f,Iz,R,delta_in,lf,m,mu,omegaB,vx,vy);
+                    obj.f(:,i) = statesdot_fsrg(C,F_long,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
                     obj.slipflag = 2;
                     
                 elseif (abs(alphaf) < alphaFMax && abs(alphar) >= alphaRMax) % front grip, rear slip
-                    Ac = A_fgrs(C,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
-                    Bc = B_fgrs(C,F_long,Fz_f,Iz,R,delta_in,lf,m,mu,omegaB,vx,vy);
+                    obj.A(:,:,i) = A_fgrs(C,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    obj.B(:,:,i) = B_fgrs(C,F_long,Fz_f,Iz,R,delta_in,lf,m,mu,omegaB,vx,vy);
+                    obj.f(:,i) = statesdot_fgrs(C,F_long,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
                     obj.slipflag = 3;
                     
                 elseif (abs(alphaf) >= alphaFMax && abs(alphar) >= alphaRMax) % front slip, rear slip
-                    Ac = A_fsrs(Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
-                    Bc = B_fsrs(F_long,Fz_f,Iz,R,delta_in,lf,m,mu,omegaB,vx,vy);
+                    obj.A(:,:,i) = A_fsrs(Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                    obj.B(:,:,i) = B_fsrs(F_long,Fz_f,Iz,R,delta_in,lf,m,mu,omegaB,vx,vy);
+                    obj.f(:,i) = statesdot_fsrs(F_long,Fz_f,Fz_r,Iz,R,delta_in,lf,lr,m,mu,omegaB,varphi,vx,vy);
                     obj.slipflag = 4;
                 end
                 
-                % Convert To Discrete
-                obj.A(:,:,i) = expm(Ac*obj.Ts);
-                phitemp = zeros(size(Ac));
-                for k = 0:1:10
-                    phitemp = phitemp + Ac^k*obj.Ts^(k+1)/(factorial(k+1));
-                end
-                obj.B(:,:,i) = phitemp*Bc;
+%                 % Convert To Discrete
+%                 obj.A(:,:,i) = expm(Ac*obj.Ts);
+%                 phitemp = zeros(size(Ac));
+%                 for k = 0:1:10
+%                     phitemp = phitemp + Ac^k*obj.Ts^(k+1)/(factorial(k+1));
+%                 end
+%                 obj.B(:,:,i) = phitemp*obj.B(:,:,i);
 
               
             end
@@ -161,11 +166,11 @@ classdef MPC < handle
             
             % set weights cost functions terms
             qc = 10;
-            ql = 10;
-            gamma = 1;
+            ql = 100;
+            gamma = 10;
             rdelta = 100;
             rF_long = 1;
-            rv = 1;
+            rv = 10;
             
             for i = 1:obj.N
                 X0 = obj.States(1,i);
@@ -175,7 +180,9 @@ classdef MPC < handle
                 el0 = getEl(X0,Y0,ax,ay,bx,by,cx,cy,dx,dy,theta0);
                 
                 Gtemp = getDf(obj.Ts,X0,Y0,ax,ay,bx,by,cx,cy,dx,dy,ec0,el0,gamma,qc,ql,theta0);
+                              %   Ts,X0,Y0,ax,ay,bx,by,cx,cy,dx,dy,ec0,el0,gamma,qc,ql,theta0
                 Htemp = getDDf(X0,Y0,ax,ay,bx,by,cx,cy,dx,dy,qc,ql,rF_long,rdelta,rv,theta0);
+                              %X0,Y0,ax,ay,bx,by,cx,cy,dx,dy,qc,ql,rF_long,rdelta,rv,theta0
                 
                 G(1+(i-1)*obj.nVarsPerIter:i*obj.nVarsPerIter) = Gtemp;
                 H(1+(i-1)*obj.nVarsPerIter:i*obj.nVarsPerIter,1+(i-1)*obj.nVarsPerIter:i*obj.nVarsPerIter) = Htemp;
@@ -184,58 +191,6 @@ classdef MPC < handle
             
         end
         
-        function cost = cost(obj,opt)
-            % weights
-            qc = 100;
-            ql = 100;
-            gamma = .001;
-            ru1 = 1;
-            ru2 = .1;
-            rv = 1;
-            R = [ru1, 0 , 0;
-                0, ru2, 0;
-                0, 0, rv];
-            varsPerIter = 3;
-            
-            % inVec = [theta, F_long_1, delta_1, v_1, F_long_2, delta_2, v_2, ...
-            lenInVec = length(opt);
-            theta = opt(1);
-            F_long_opt = opt(2:varsPerIter:lenInVec-2);
-            delta_opt = opt(3:varsPerIter:lenInVec-1);
-            v_opt = opt(4:varsPerIter:lenInVec);
-            
-            
-            % these dont need to be outputed during optimization, they can
-            % be computed and stored from the other opt variables after its all done
-            thetaTemp = zeros(1,obj.N);
-            StatesTemp = zeros(6,obj.N);
-            thetaTemp(1) = theta;
-            StatesTemp(:,1) = obj.States(:, 1);
-            
-            
-            cost = -gamma*obj.Ts*v_opt(1);
-            for k = 2:obj.N
-                % step theta forward in time
-                thetaTemp(k) = thetaTemp(k-1) + v_opt(k-1)*obj.Ts;
-                
-                % step the states forward in time
-                StatesTemp(:,k) = StatesTemp(:,k-1)  ...
-                    + obj.Ts*(obj.A(:,:,k-1)*(StatesTemp(:,k-1)-obj.States(:,k-1)) ...
-                    + obj.B(:,:,k-1)*([F_long_opt(k-1),delta_opt(k-1)]' - [obj.F_long(k-1), obj.delta(k-1)]' ) + obj.f(:,k-1));
-                
-                % add the next term in the cost function
-                cost = cost ...
-                    + ql*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)]'*obj.Gamma_el(:,:,k)*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)] ...
-                    + ql*obj.C_el(:,k)'*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)] ...
-                    + qc*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)]'*obj.Gamma_ec(:,:,k)*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)] ...
-                    + qc*obj.C_ec(:,k)'*[StatesTemp(1,k); StatesTemp(2,k); thetaTemp(k)] ...
-                    - gamma*v_opt(k)*obj.Ts ...
-                    + [F_long_opt(k)-F_long_opt(k-1); delta_opt(k)-delta_opt(k-1); v_opt(k)-v_opt(k-1)]'*R*[F_long_opt(k)-F_long_opt(k-1); delta_opt(k)-delta_opt(k-1); v_opt(k)-v_opt(k-1)];
-                
-            end
-        end
-        
-
         
         function [Aeq, Beq] = getEqualityCons(obj)
             nVarsPerIter = 13;
@@ -258,15 +213,17 @@ classdef MPC < handle
             
             for i = 2:N1
                 temp = zeros(nVarsPerIter, 2*nVarsPerIter);
+                tempB = zeros(nVarsPerIter, 1);
                 % theta_k + vk*Ts - theta_k+1 = 0
                 temp(1, 1) = 1;
                 temp(1, 10) = obj.Ts;
                 temp(1, nVarsPerIter+1) = -1;
                 
                 % A_k*X_k + B_k*U_k - X_k+1 = 0
-                temp(2:7, 2:7) = obj.A(:,:,i-1);
-                temp(2:7, 8:9) = obj.B(:,:,i-1);
-                temp(2:7, 2+nVarsPerIter:7+nVarsPerIter) = -eye(size(obj.A(:,:,i)));
+                temp(2:7, 2:7) = -(eye(size(obj.A(:,:,i))) + obj.Ts*obj.A(:,:,i-1));
+                temp(2:7, 8:9) = -obj.Ts*obj.B(:,:,i-1);
+                temp(2:7, 2+nVarsPerIter:7+nVarsPerIter) = eye(size(obj.A(:,:,i)));
+                tempB(2:7) = -obj.Ts*(obj.A(:,:,i-1)*obj.States(:,i-1) + obj.B(:,:,i-1)*[obj.delta(i-1); obj.F_long(i-1)] - obj.f(:,i-1));
                 
                 % delta_k+1 - delta_k - ddelta_k+1 = 0
                 temp(11, 8) = -1;
@@ -286,6 +243,8 @@ classdef MPC < handle
 
                 % Put temp into big Aeq matrix
                 Aeq(r_start:r_stop, c_start:c_stop) = temp;
+                Beq(r_start:r_stop) = tempB;
+
                 
                 % re-calc indices to insert into for next iteration
                 r_start = r_start + nVarsPerIter;

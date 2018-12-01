@@ -1,6 +1,6 @@
 close all; clear all;
 
-endTime = 80;
+endTime = 20;
 Ts = .05;
 N = 40;      % horizon length
 inputFile = 'track1.txt';
@@ -76,10 +76,10 @@ for n = 1:length(time1)
     [Aeq, Beq] = mpc.getEqualityCons();
     [G,H] = mpc.getCostMatrices(ax, ay, bx, by, cx, cy, dx, dy);
     
-    lb(8) = max(delta_old - 5*pi/180,car.delta_min);
+   lb(8) = max(delta_old - 5*pi/180,car.delta_min);
     ub(8) = min(delta_old + 5*pi/180,car.delta_max);  
     
-    %optVar = quadprog(H,G,[],[],Aeq,Beq,lb,ub);
+    optVar = quadprog(H,G,[],[],Aeq,Beq,lb,ub);
     
     delta_old = optVar(8);
     
@@ -96,22 +96,30 @@ for n = 1:length(time1)
     mpc.dv(1,:) = optVar(13:nVarsPerIter:end);
     
     % update simulation model states using ode45
-    %car.updateOneTrack(Ts,mpc.delta(1),mpc.F_long(1));
-    car.updateOneTrackLinear(Ts,5*pi/180,0);
-    
+    car.updateOneTrack(Ts,mpc.delta(1),mpc.F_long(1));
+
+
     vtot = norm([car.vx,car.vy]);
     
     if n > 1
         children = get(gca, 'children');
-        %delete(children(1));
-        %delete(children(2));
+        delete(children(1));
+        delete(children(2));
+         delete(children(3));
     end
+    
+    [~, xtheta, ytheta, ~] = rt.getXY(mpc.thetaA, 1);
+    
 	car.plotCar();
-    %plot(mpc.States(1,:), mpc.States(2,:), 'b.-')
-    %axis([100 150 -5 30])
+    
+    plot(xtheta, ytheta, 'r*')
+    plot(mpc.States(1,:), mpc.States(2,:), 'b.-')
+    axis([100 150 -5 30])
     title(['velocity = ', num2str(vtot)]);
     drawnow();
 
+    
+    
     % save history of states
     X_hist = [X_hist car.X];
     Y_hist = [Y_hist car.Y];
