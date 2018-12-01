@@ -6,16 +6,16 @@ classdef MPC < handle
         f
         
         % Optimization variables
-        thetaA    % (1xN) 
+        thetaA    % (1xN)
         States    % (6xN) [X, Y, varphi, vx, vy, omegaB]'
-        delta     % (1xN) 
-        F_long    % (1xN) 
-        v         % (1xN) 
+        delta     % (1xN)
+        F_long    % (1xN)
+        v         % (1xN)
         ddelta    % (1xN)
         dF_long   % (1xN)
         dv        % (1xN)
         
-        nVarsPerIter % number of optimzation variables per time step     
+        nVarsPerIter % number of optimzation variables per time step
         
         Ts        % sampling period
         N         % Horizon length
@@ -73,9 +73,9 @@ classdef MPC < handle
             for i = 2:N1-1
                 obj.States(:,i) = obj.States(:,i+1);
             end
-
+            
             obj.States(:,N1) = obj.States(:,N1) + obj.Ts*( obj.f(:,N1)+ obj.A(:,:,N1)*(obj.States(:,N1)-obj.StatesN) + obj.B(:,:,N1)*(U-UN) );
-
+            
             % shift optimization vars by one sampling period to use as
             % linearization points and inital guess in fmincon
             for i = 1:N1-1
@@ -87,6 +87,7 @@ classdef MPC < handle
                 obj.dF_long(i) = obj.dF_long(i+1);
                 obj.dv(i) = obj.dv(i+1);
             end
+            %obj.thetaA(N1) = obj.thetaA(N1) + obj.v(N1)*obj.Ts;
             
             obj.StatesN = obj.States(:,N1);
             obj.deltaN = obj.delta(N1);
@@ -160,15 +161,15 @@ classdef MPC < handle
                     obj.slipflag = 4;
                 end
                 
-%                 % Convert To Discrete
-%                 obj.A(:,:,i) = expm(Ac*obj.Ts);
-%                 phitemp = zeros(size(Ac));
-%                 for k = 0:1:10
-%                     phitemp = phitemp + Ac^k*obj.Ts^(k+1)/(factorial(k+1));
-%                 end
-%                 obj.B(:,:,i) = phitemp*obj.B(:,:,i);
-
-              
+                %                 % Convert To Discrete
+                %                 obj.A(:,:,i) = expm(Ac*obj.Ts);
+                %                 phitemp = zeros(size(Ac));
+                %                 for k = 0:1:10
+                %                     phitemp = phitemp + Ac^k*obj.Ts^(k+1)/(factorial(k+1));
+                %                 end
+                %                 obj.B(:,:,i) = phitemp*obj.B(:,:,i);
+                
+                
             end
         end
         
@@ -177,12 +178,12 @@ classdef MPC < handle
             G = zeros(obj.nVarsPerIter*obj.N,1);
             
             % set weights cost functions terms
-            qc = 1;
-            ql = 1;
-            gamma = 1;
-            rdelta = 1;
-            rF_long = 1;
-            rv = 1;
+            qc = 10;
+            ql = 100;
+            gamma = .1;
+            rdelta = 1000000;
+            rF_long = 10;
+            rv = 10000;
             
             for i = 1:obj.N
                 X0 = obj.States(1,i);
@@ -192,9 +193,9 @@ classdef MPC < handle
                 el0 = getEl(X0,Y0,ax,ay,bx,by,cx,cy,dx,dy,theta0);
                 
                 Gtemp = getDf(obj.Ts,X0,Y0,ax,ay,bx,by,cx,cy,dx,dy,ec0,el0,gamma,qc,ql,theta0);
-                              %   Ts,X0,Y0,ax,ay,bx,by,cx,cy,dx,dy,ec0,el0,gamma,qc,ql,theta0
+                %   Ts,X0,Y0,ax,ay,bx,by,cx,cy,dx,dy,ec0,el0,gamma,qc,ql,theta0
                 Htemp = getDDf(X0,Y0,ax,ay,bx,by,cx,cy,dx,dy,qc,ql,rF_long,rdelta,rv,theta0);
-                              %X0,Y0,ax,ay,bx,by,cx,cy,dx,dy,qc,ql,rF_long,rdelta,rv,theta0
+                %X0,Y0,ax,ay,bx,by,cx,cy,dx,dy,qc,ql,rF_long,rdelta,rv,theta0
                 
                 G(1+(i-1)*obj.nVarsPerIter:i*obj.nVarsPerIter) = Gtemp;
                 H(1+(i-1)*obj.nVarsPerIter:i*obj.nVarsPerIter,1+(i-1)*obj.nVarsPerIter:i*obj.nVarsPerIter) = Htemp;
@@ -204,25 +205,27 @@ classdef MPC < handle
         end
         
         
-        function cost = getNonlinCost(obj, optVar, ax, ay, bx, by, cx, cy, dx, dy)
+        
+        function [cost,gcost] = getNonlinCost(obj, optVar, ax, ay, bx, by, cx, cy, dx, dy)
             
             % weights
-            qc = 100;
-            ql = 100;
-            gamma = 1;
-            rdelta = 100;
-            rF_long = 1;
-            rv = 1;
+            qc = 1000;
+            ql = 1000;
+            gamma = .1;
+            rdelta = .1;
+            rF_long = .1;
+            rv = .1;
             
             N1 = obj.N;
-            cost = 0; 
+            cost = 0;
+            gcost = [];
             for i = 1:N1
                 theta_i = optVar(1+obj.nVarsPerIter*(i-1));
                 X_i = optVar(2+obj.nVarsPerIter*(i-1));
                 Y_i = optVar(3+obj.nVarsPerIter*(i-1));
                 v_i = optVar(10+obj.nVarsPerIter*(i-1));
                 ddelta_i = optVar(11+obj.nVarsPerIter*(i-1));
-                dFlong_i = optVar(12+obj.nVarsPerIter*(i-1));
+                dF_long_i = optVar(12+obj.nVarsPerIter*(i-1));
                 dv_i = optVar(13+obj.nVarsPerIter*(i-1));
                 
                 
@@ -230,14 +233,19 @@ classdef MPC < handle
                 ec_i = getEc(X_i, Y_i, ax, ay, bx, by, cx, cy, dx, dy, theta_i);
                 
                 cost = cost + qc*ec_i^2 + ql*el_i^2 + rdelta*ddelta_i^2 ...
-                      + rF_long*dFlong_i^2 + rv*dv_i^2 - gamma*obj.Ts*v_i;
+                    + rF_long*dF_long_i^2 + rv*dv_i^2 - gamma*obj.Ts*v_i;
+                
+                if nargout > 1 % gradient required
+                    gcost = [gcost;getDf(obj.Ts,X_i,Y_i,ax,ay,bx,by,cx,cy,dF_long_i,ddelta_i,dv_i,dx,dy,gamma,qc,ql,rF_long,rdelta,rv,theta_i)];
+                                        %    Ts,  X,  Y,ax,ay,bx,by,cx,cy,  dF_long,  ddelta,  dv,dx,dy,gamma,qc,ql,rF_long,rdelta,rv,  theta
+                end
             end
             
         end
         
         
         
-        function [Aeq, Beq] = getEqualityCons(obj)
+        function [Aeq, Beq] = getEqualityCons(obj, delta1, F_long1,v1)
             nVarsPerIter = 13;
             nVars = nVarsPerIter*obj.N;
             
@@ -247,6 +255,21 @@ classdef MPC < handle
             Aeq(1:7, 1:7) = eye(7);
             Beq(1,1) = obj.thetaA(1);
             Beq(2:7) = obj.States(:,1);
+            
+            % ddelta(1) = delta(1) - delta1
+            Aeq(11,11) = 1;
+            Aeq(11,8) = -1;
+            Beq(11) = -delta1;
+            
+            % dF_long(1) = F_long(1) - Flong1
+            Aeq(12,12) = 1;
+            Aeq(12,9) = -1;
+            Beq(12) = -F_long1;
+            
+            % dv(1) = v(1) - v1
+            Aeq(13,13) = 1;
+            Aeq(13,10) = -1;
+            Beq(13) = -v1;
             
             N1 = obj.N;
             
@@ -285,18 +308,18 @@ classdef MPC < handle
                 temp(13, 10+nVarsPerIter) = 1;
                 temp(13, 13+nVarsPerIter) = -1;
                 
-
+                
                 % Put temp into big Aeq matrix
                 Aeq(r_start:r_stop, c_start:c_stop) = temp;
                 Beq(r_start:r_stop) = tempB;
-
+                
                 
                 % re-calc indices to insert into for next iteration
                 r_start = r_start + nVarsPerIter;
                 r_stop = r_stop + nVarsPerIter;
                 c_start = c_start + nVarsPerIter;
                 c_stop = c_stop + nVarsPerIter;
-
+                
             end
             
         end

@@ -28,16 +28,17 @@ classdef RaceTrack < handle
             
             % if we're passed the end of the track, start at the beginning
             % again
+            
             if theta_in(1) >= obj.theta(obj.N1)
-                theta_out = theta_in - obj.theta(end);
+                theta_out = theta_in - obj.theta(end)/2;
                 lapCount = lapCount + 1;
             else
                 theta_out = theta_in;
             end
             
-            iStart = find(obj.theta <= theta_in(1));
+            iStart = find(obj.theta <= theta_out(1));
             iStart = iStart(end);
-            iEnd = find(obj.theta >= theta_in(end));
+            iEnd = find(obj.theta >= theta_out(end));
             iEnd = iEnd(1);
             
             X_out = interp1(obj.theta(iStart:iEnd), obj.X(iStart:iEnd),theta_out);

@@ -1,7 +1,7 @@
 close all; clear all;
 
-endTime = 100;
-Ts = .025;
+endTime = 150;
+Ts = .1;
 N = 40;      % horizon length
 inputFile = 'track1.txt';
 width = 12;
@@ -19,7 +19,7 @@ Y0 = rt.Y(1);
 car = car1();
 car.X = X0;
 car.Y = Y0;
-car.vx = 5;
+car.vx = 10;
 
 % initalize Model Pridictive Controller
 mpc = MPC(Ts,N,car);
@@ -44,16 +44,19 @@ lapCount = 0;
 %[A, B] = mpc.getIneqCons(car);
 [lb,ub] = mpc.getBounds(car,rt);
 
-delta_old = 0;
+delta1 = mpc.delta(1);
+F_long1 = mpc.F_long(1);
+v1 = mpc.v(1);
 
 for n = 1:length(time1)
     t = time1(n);
     
     % calculate cubic approximation to track over the the prediction
     % horizon
-    theta1 = mpc.thetaA;
-    [theta1,X1,Y1,lapCount] = rt.getXY(theta1,lapCount);
+    
+    [theta1,X1,Y1,lapCount] = rt.getXY(mpc.thetaA,lapCount);
     [ax,bx,cx,dx,ay,by,cy,dy] = rt.getCubicPolynomial(theta1,X1,Y1);
+    mpc.thetaA = theta1;
     
     %linearize dynamics model
     mpc.linearizeModel(car)
@@ -72,14 +75,15 @@ for n = 1:length(time1)
     optVar(13:nVarsPerIter:end) = mpc.dv;
     
     % solve optimization problem to yield inputs [delta, Flong]
-    [Aeq, Beq] = mpc.getEqualityCons();
-%     [G,H] = mpc.getCostMatrices(ax, ay, bx, by, cx, cy, dx, dy);
+    [Aeq, Beq] = mpc.getEqualityCons(delta1, F_long1,v1);
+    [G,H] = mpc.getCostMatrices(ax, ay, bx, by, cx, cy, dx, dy);
     
-%     optVar = quadprog(H,G,[],[],Aeq,Beq,lb,ub);
-    optVar = fmincon(@(optVar) mpc.getNonlinCost(optVar, ax, ay, bx, by, cx, cy, dx, dy), ...
-                     optVar, [],[],Aeq, Beq, lb, ub);
-
-
+    optVar = quadprog(H,G,[],[],Aeq,Beq,lb,ub);
+    %options = optimoptions('fmincon','SpecifyObjectiveGradient',true);
+    %options = optimoptions('fmincon','MaxFunctionEvaluations', 3000);
+    %optVar = fmincon(@(optVar) mpc.getNonlinCost(optVar, ax, ay, bx, by, cx, cy, dx, dy),optVar, [],[],Aeq, Beq, lb, ub,[],options);
+    
+    
     % update variable vectors
     mpc.thetaA(1,:) = optVar(1:nVarsPerIter:end) ;
     for i = 1:N
@@ -105,17 +109,17 @@ for n = 1:length(time1)
         delete(children(4));
         delete(children(5));
         delete(children(6));
-%         delete(children(7));
-%         delete(children(8));
+        %         delete(children(7));
+        %         delete(children(8));
         
     end
     
-    [~, xtheta, ytheta, ~] = rt.getXY(mpc.thetaA, 1); 
+    [~, xtheta, ytheta, ~] = rt.getXY(mpc.thetaA, 1);
     car.plotCar(mpc.delta(1));
-%     plot(xtheta, ytheta, 'r*')
+    %     plot(xtheta, ytheta, 'r*')
     plot(mpc.States(1,:), mpc.States(2,:), 'b.-')
-%     axis([100 150 -5 30])
-    title(['velocity = ', num2str(vtot)]);   
+    %     axis([100 150 -5 30])
+    title(['velocity = ', num2str(vtot), '    time = ', num2str(t)]);
     
     
     % save history of states
@@ -129,7 +133,7 @@ for n = 1:length(time1)
     delta_hist  = [delta_hist mpc.delta(1)];
     thetaA_hist = [thetaA_hist, mpc.thetaA(1)];
     v_hist = [v_hist, mpc.v(1)];
-    slipflag_hist = [slipflag_hist, mpc.slipflag];  
+    slipflag_hist = [slipflag_hist, mpc.slipflag];
     Fx_hist = [Fx_hist car.Fx];
     Fy_hist = [Fy_hist car.Fy];
     
@@ -137,7 +141,11 @@ for n = 1:length(time1)
     States = [car.X,car.Y, car.phi,car.vx,car.vy,car.omegaB];
     mpc.setLinPoints(States);
     
-%     plot(mpc.States(1,:), mpc.States(2,:), 'g.-')
+    delta1 = mpc.delta(1);
+    F_long1 = mpc.F_long(1);
+    v1 = mpc.v(1);
+    
+    %     plot(mpc.States(1,:), mpc.States(2,:), 'g.-')
     drawnow();
 end
 

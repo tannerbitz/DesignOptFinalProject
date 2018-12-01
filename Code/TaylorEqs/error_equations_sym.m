@@ -69,20 +69,26 @@ deltaX = [X-X0; Y-Y0; theta-theta0];
 el2 = ql*(el0 + del*deltaX)^2;
 ec2 =  qc*(ec0 + dec*deltaX)^2;
 
-f = el2 + ec2 - gamma*v*Ts ;
+%ec2 = qc*ec^2;
+%el2 = ql*el^2;
+
+f = el2 + ec2 - gamma*v*Ts + rdelta*ddelta^2 + rF_long*dF_long^2 + rv*dv^2;
 Df = gradient(f,optVar);
-DDf = [gradient(Df(1), optVar), gradient(Df(2), optVar), gradient(Df(3), optVar)];
+
+DDf = [gradient(Df(1), optVar), gradient(Df(2), optVar), gradient(Df(3), optVar),gradient(Df(4), optVar), gradient(Df(5), optVar), gradient(Df(6), optVar), ...
+    gradient(Df(7), optVar), gradient(Df(8), optVar), gradient(Df(9), optVar),gradient(Df(10), optVar), gradient(Df(11), optVar), gradient(Df(12), optVar), ...
+    gradient(Df(13), optVar)];
+
 DDf = DDf';
-DDf = [DDf; zeros(length(optVar) - 3, length(optVar))];
+%DDf = [DDf; zeros(length(optVar) - 3, length(optVar))];
 
-DDf(11,11) = rdelta;
-DDf(12,12) = rF_long;
-DDf(13,13) = rv;
-
-% plug in x,y,theta = 0 
+%plug in x,y,theta = 0 
 Df = subs(Df, X, 0);
 Df = subs(Df, Y, 0);
 Df = subs(Df, theta, 0);
+Df = subs(Df, ddelta, 0);
+Df = subs(Df, dF_long, 0);
+Df = subs(Df, dv, 0);
 
 matlabFunction(Df, 'File', 'getDf');
 matlabFunction(DDf, 'File', 'getDDf');
