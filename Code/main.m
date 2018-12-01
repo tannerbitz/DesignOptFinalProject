@@ -2,7 +2,7 @@ close all; clear all;
 
 endTime = 150;
 Ts = .1;
-N = 40;      % horizon length
+N = 30;      % horizon length
 inputFile = 'track1.txt';
 width = 12;
 nVarsPerIter = 13;
