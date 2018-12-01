@@ -48,7 +48,7 @@ classdef SimModel < handle
         function update(obj,deltaT, delta, F_long)
             % update vehicle states using ODE45
             States0 = [obj.X, obj.Y, obj.phi, obj.vx, obj.vy, obj.omegaB]';
-                  
+            
             [~,newStates] = ode45(@(t,States) obj.calcRHS(t,States, delta,F_long), [0 deltaT], States0);
             
             obj.X = newStates(end,1);
@@ -85,7 +85,7 @@ classdef SimModel < handle
             vx_in = States(4);
             vy_in = States(5);
             omegaB_in = States(6);
-
+            
             
             % compute lengths from cg to front and rear end
             lf = obj.dm*obj.length;
@@ -104,13 +104,13 @@ classdef SimModel < handle
             Ffr_lat = obj.getTireForcesMassera(omegaB_in, delta, vy_in, vx_in, Ffr_z, lr);
             Frl_lat = obj.getTireForcesMassera(omegaB_in, 0, vy_in, vx_in, Frl_z, -lf);
             Frr_lat = obj.getTireForcesMassera(omegaB_in, 0, vy_in, vx_in, Frr_z, -lf);
-
+            
             Ffl_long = F_long;
             Ffr_long = F_long;
             Frl_long = F_long;
             Frr_long = F_long;
-
-
+            
+            
             % update Fx and Fy so it can be used in the next timestep;
             obj.Fx =  Frl_long + Frr_long - Ffl_lat*sin(delta) - Ffr_lat*sin(delta) ...
                 + Ffl_long*cos(delta) + Ffr_long*cos(delta);
@@ -126,7 +126,7 @@ classdef SimModel < handle
             vy_dot  = 1/obj.mass*(obj.Fy - obj.mass*vx_in*obj.omegaB);
             omegaB_dot = 1/obj.Iz*((Ffl_lat*cos(delta) + Ffr_lat*cos(delta) + Ffl_long*sin(delta) + Ffr_long*sin(delta))*lf  ...
                 - Frl_lat*lr - Frr_lat*lr + (-Ffl_long*cos(delta) - Frl_long + Ffr_long*cos(delta) + Frr_long) * obj.width/2);
-
+            
             
             States_dot = [X_dot,Y_dot, phi_dot, vx_dot, vy_dot, omegaB_dot]';
             
@@ -141,7 +141,7 @@ classdef SimModel < handle
             vx_in = States(4);
             vy_in = States(5);
             omegaB_in = States(6);
-
+            
             
             % compute lengths from cg to front and rear end
             lf = obj.dm*obj.length;
@@ -151,15 +151,15 @@ classdef SimModel < handle
             % timestep
             Ff_z = obj.mass*9.81*(1 - obj.dm);
             Fr_z = obj.mass*9.81*obj.dm;
-    
+            
             % compute tire longitudenal and lateral forces with Fiala tire
             % model
             Ff_lat = obj.getTireForcesMassera(omegaB_in, delta, vy_in, vx_in, Ff_z, lf);
             Fr_lat = obj.getTireForcesMassera(omegaB_in, 0, vy_in, vx_in, Fr_z, -lr);
-
+            
             Ff_long = F_long;
             Fr_long = F_long;
-
+            
             % update Fx and Fy so it can be used in the next timestep;
             obj.Fx = Fr_long + - Ff_lat*sin(delta) + Ff_long*cos(delta);
             obj.Fy = Fr_lat + Ff_lat*cos(delta) + Ff_long*sin(delta);
@@ -171,7 +171,7 @@ classdef SimModel < handle
             vx_dot  = 1/obj.mass*(obj.Fx + obj.mass*vy_in*obj.omegaB);
             vy_dot  = 1/obj.mass*(obj.Fy - obj.mass*vx_in*obj.omegaB);
             omegaB_dot = 1/obj.Iz*(Ff_lat*lf*cos(delta) + Ff_long*lf*sin(delta) - Fr_lat*lr);
-
+            
             
             States_dot = [X_dot,Y_dot, phi_dot, vx_dot, vy_dot, omegaB_dot]';
             
@@ -196,43 +196,58 @@ classdef SimModel < handle
             alphaf = atan2(obj.vy + lr*obj.omegaB, obj.vx) - delta;
             alphar = atan2(obj.vy - lf*obj.omegaB, obj.vx);
             
-
-
+            vx = obj.vx;
+            vy = obj.vy;
+            if abs(obj.vx) < 1 %10^-8
+                vx = 1; % 1e-8;
+            end
+            if abs(obj.vy) < 10^-8
+                vy = 10^-8;
+            end
+            
+            
             if (abs(alphaf) < alphaFMax  && abs(alphar) < alphaRMax) % front grip, rear grip
-                f = statesdot_fgrg(obj.C, F_long, Fz_f, Fz_r,obj.Iz,R,delta,lf,lr,obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
-                A = A_fgrg(obj.C, Fz_f, Fz_r, obj.Iz, R, delta, lf, lr, obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
-                B = B_fgrg(obj.C, F_long, Fz_f, obj.Iz, R, delta, lf, lr, obj.mass, obj.mu_s, obj.omegaB, obj.vx, obj.vy);
+                f = statesdot_fgrg(C,Flong,Fz_f,Fz_r,Iz,R,delta,lf,lr,m,mu,omegaB,varphi,vx,vy);
+                Ac = A_fgrg(obj.C,Fz_f,Fz_r,obj.Iz,R,delta,lf,lr,obj.mass,obj.mu_s,obj.omegaB,obj.phi,vx,vy);
+                               %C,Fz_f,Fz_r,    Iz,R,delta,lf,lr,       m,      mu,    omegaB, varphi,vx,vy)
+                Bc = B_fgrg(obj.C,F_long,Fz_f,obj.Iz,R,delta,lf,obj.mass,obj.mu_s,obj.omegaB,vx,vy);
+                               %C, Flong,Fz_f,    Iz,R,delta,lf,       m,    mu,      omegaB,vx,vy
+ 
+            elseif (abs(alphaf) >= alphaFMax && abs(alphar) < alphaRMax) % front slip, rear grip
+                Ac = A_fsrg(obj.C,Fz_f,Fz_r,obj.Iz,R,delta,lf,lr,obj.mass,obj.mu_s,obj.omegaB,obj.phi,vx,vy);
+                               %C,Fz_f,Fz_r,    Iz,R,delta,lf,lr,       m,    mu,      omegaB, varphi,vx,vy
+                Bc = B_fsrg(F_long,Fz_f,obj.Iz,R,delta,lf,obj.mass,obj.mu_s,obj.omegaB,vx,vy);
+                           % Flong,Fz_f,    Iz,R,delta,lf,       m,      mu,    omegaB,vx,vy
+                
+            elseif (abs(alphaf) < alphaFMax && abs(alphar) >= alphaRMax) % front grip, rear slip
+                Ac = A_fgrs(obj.C,Fz_f,Fz_r,obj.Iz,R,delta,lf,lr,obj.mass,obj.mu_s,obj.omegaB,obj.phi,vx,vy);
+                            %   C,Fz_f,Fz_r,    Iz,R,delta,lf,lr,       m,    mu,      omegaB, varphi,vx,vy
+                Bc = B_fgrs(obj.C,F_long,Fz_f,obj.Iz,R,delta,lf,obj.mass,obj.mu_s,obj.omegaB,vx,vy);
+                             %  C, Flong,Fz_f,    Iz,R,delta,lf,       m,    mu,      omegaB,vx,vy
+                
+            elseif (abs(alphaf) >= alphaFMax && abs(alphar) >= alphaRMax) % front slip, rear slip
+                Ac = A_fsrs(Fz_f,Fz_r,obj.Iz,R,delta,lf,lr,obj.mass,obj.mu_s,obj.omegaB,obj.phi,vx,vy);
+                           %Fz_f,Fz_r,    Iz,R,delta,lf,lr,       m,      mu,    omegaB, varphi,vx,vy
+                Bc = B_fsrs(F_long,Fz_f,obj.Iz,R,delta,lf,obj.mass,obj.mu_s,obj.omegaB,vx,vy);
+                            %Flong,Fz_f,    Iz,R,delta,lf,       m,    mu,      omegaB,vx,vy
+                
+            end
             
-            elseif (abs(alphaf) >= alphaFMax  && abs(alphar) < alphaRMax) % front grip, rear grip
-                f = statesdot_fsrg(obj.C, F_long, Fz_f, Fz_r,obj.Iz,R,delta,lf,lr,obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
-                A = A_fsrg(obj.C, Fz_f, Fz_r, obj.Iz, R, delta, lf, lr, obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
-                B = B_fsrg(obj.C, F_long, Fz_f, obj.Iz, R, delta, lf, lr, obj.mass, obj.mu_s, obj.omegaB, obj.vx, obj.vy);
-            
-            elseif (abs(alphaf) < alphaFMax  && abs(alphar) >= alphaRMax) % front grip, rear grip
-                f = statesdot_fgrs(obj.C, F_long, Fz_f, Fz_r,obj.Iz,R,delta,lf,lr,obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
-                A = A_fgrs(obj.C, Fz_f, Fz_r, obj.Iz, R, delta, lf, lr, obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
-                B = B_fgrs(obj.C, F_long, Fz_f, obj.Iz, R, delta, lf, lr, obj.mass, obj.mu_s, obj.omegaB, obj.vx, obj.vy);
-            
-            else
-                f = statesdot_fsrs(F_long,Fz_f,Fz_r, obj.Iz, delta,lf,lr,obj.mass, obj.mu_s, obj.omegaB, obj.phi,obj.vx,obj.vy);
-                A = A_fsrs(Fz_f,Fz_r, obj.Iz,R,delta,lf,lr,obj.mass, obj.mu_s, obj.omegaB, obj.phi, obj.vx, obj.vy);
-                B = B_fsrs(F_long,Fz_f,obj.Iz,R, delta,lf,lr, obj.mass, obj.mu_s, obj.omegaB, obj.vx,obj.vy);
-            end  
-            
+            % Convert To Discrete
             states = [obj.X; obj.Y; obj.phi; obj.vx; obj.vy; obj.omegaB];
             inputs = [delta; F_long];
-            Ts = 0.05;
-            sys = ss(A, B, eye(6), []);
-            sys2 = c2d(sys, Ts);
-            Ad = sys2.A;
-            Bd = sys2.B;
-            Cd = sys2.C;
-            Dd = sys2.D;
             
-            for i = Ts:Ts:deltaT
-                states = Ad*states + Bd*inputs;
-            end
-                
+            %             A = expm(Ac*deltaT);
+            %             phitemp = zeros(size(Ac));
+            %             for k = 0:1:10
+            %                 phitemp = phitemp + Ac^k*deltaT^(k+1)/(factorial(k+1));
+            %             end
+            %             B = phitemp*Bc;
+            %
+            %             states = A*states + B*inputs;
+            
+            states = states + deltaT*(Ac*states + Bc*inputs);
+            
             obj.X = states(1);
             obj.Y = states(2);
             obj.phi = states(3);
@@ -241,44 +256,6 @@ classdef SimModel < handle
             obj.omegaB = states(6);
         end
         
-        
-       
-        
-        function [F_long, F_lat] = getTireForces(obj, omegaW_in, vx_in, vy_in, Fz_in, delta_in, torque_in)
-            %getTireForces calculates and returns the latitudinal and
-            %longitudinal forces on a wheel.
-            eps = 10^-13;
-            % Calculate sigmaLat/ sigmaLong/ sigma
-            if sign(torque_in) >= 0
-                sigmaLong = (obj.wr*omegaW_in - vx_in)/(obj.wr*omegaW_in+eps);
-            else
-                sigmaLong = (obj.wr*omegaW_in - vx_in)/(vx_in+eps);
-            end
-            
-            
-            alpha = delta_in - atan2(vy_in,vx_in);
-            
-            sigmaLat = vx_in/(obj.wr*omegaW_in+eps)*tan(alpha);
-            sigma = sqrt(sigmaLat^2 + sigmaLong^2);
-            
-            % Calculate theta
-            theta = obj.C/(3*obj.mu*Fz_in);
-            
-            % Determine if tire is sliding/ total force
-            thetaPoly = 3*theta*sigma - 3*(theta*sigma)^2 + (theta*sigma)^3;
-            if sigma < .15 %thetaPoly < 1 %not sliding
-                Ft = obj.mu*Fz_in*thetaPoly;
-            else
-                Ft = obj.mu*Fz_in;
-            end
-            
-            % Calculate lat and long tire forces
-            F_long = sigmaLong/(sigma+eps)*Ft;
-            F_lat = sigmaLat/(sigma+eps)*Ft;
-            
-        end
-        
-
         function F_lat = getTireForcesMassera(obj, omegaW_in, delta_in, vy_in, vx_in, Fz_in, frontBackLength)
             %GETTIREFORCESMASSERA returns the lateral force on a given
             %wheel based on the Fiala Tire Model section of Massera (2015)
@@ -287,16 +264,16 @@ classdef SimModel < handle
             alpha = atan2(vy_in+frontBackLength*omegaW_in, vx_in) - delta_in ;
             f_alpha = obj.C*tan(alpha);
             R_mu = obj.mu_k/obj.mu_s;
-    
+            
             if abs(alpha) <= atan(3*obj.mu_s*Fz_in/obj.C)
-                F_lat = -f_alpha + (2-R_mu)/(3*obj.mu_s*Fz_in)*abs(f_alpha)*f_alpha ... 
-                        - (1-2/3*R_mu)/(3*obj.mu_s*Fz_in)^2*f_alpha^3;
+                F_lat = -f_alpha + (2-R_mu)/(3*obj.mu_s*Fz_in)*abs(f_alpha)*f_alpha ...
+                    - (1-2/3*R_mu)/(3*obj.mu_s*Fz_in)^2*f_alpha^3;
             else
                 F_lat = -sign(alpha)*obj.mu_s*R_mu*Fz_in;
             end
         end
-
-
+        
+        
         function [] = plotCar(obj)
             deltax1 = [obj.length/2, -obj.length/2, -obj.length/2, obj.length/2, obj.length/2+obj.length/4];
             deltay1 = [obj.width/2, obj.width/2, -obj.width/2, -obj.width/2, 0];

@@ -1,7 +1,7 @@
 close all; clear all;
 
-endTime = 4;
-Ts = .1;
+endTime = 80;
+Ts = .05;
 N = 40;      % horizon length
 inputFile = 'track1.txt';
 width = 12;
@@ -60,17 +60,17 @@ for n = 1:length(time1)
     mpc.linearizeModel(car)
    
     % make optVar vector
-    optVar0 = zeros(nVarsPerIter*N, 1);
-    optVar0(1:nVarsPerIter:end) = mpc.thetaA;
+    optVar = zeros(nVarsPerIter*N, 1);
+    optVar(1:nVarsPerIter:end) = mpc.thetaA;
     for i = 1:N
-        optVar0(2+(i-1)*nVarsPerIter:+7+(i-1)*nVarsPerIter) = mpc.States(:,i);
+        optVar(2+(i-1)*nVarsPerIter:+7+(i-1)*nVarsPerIter) = mpc.States(:,i);
     end
-    optVar0(8:nVarsPerIter:end)  = mpc.delta;
-    optVar0(9:nVarsPerIter:end)  = mpc.F_long;
-    optVar0(10:nVarsPerIter:end) = mpc.v;
-    optVar0(11:nVarsPerIter:end) = mpc.ddelta;
-    optVar0(12:nVarsPerIter:end) = mpc.dF_long;
-    optVar0(13:nVarsPerIter:end) = mpc.dv;
+    optVar(8:nVarsPerIter:end)  = mpc.delta;
+    optVar(9:nVarsPerIter:end)  = mpc.F_long;
+    optVar(10:nVarsPerIter:end) = mpc.v;
+    optVar(11:nVarsPerIter:end) = mpc.ddelta;
+    optVar(12:nVarsPerIter:end) = mpc.dF_long;
+    optVar(13:nVarsPerIter:end) = mpc.dv;
     
     % solve optimization problem to yield inputs [delta, Flong]
     [Aeq, Beq] = mpc.getEqualityCons();
@@ -79,7 +79,7 @@ for n = 1:length(time1)
     lb(8) = max(delta_old - 5*pi/180,car.delta_min);
     ub(8) = min(delta_old + 5*pi/180,car.delta_max);  
     
-    optVar = quadprog(H,G,[],[],Aeq,Beq,lb,ub);
+    %optVar = quadprog(H,G,[],[],Aeq,Beq,lb,ub);
     
     delta_old = optVar(8);
     
@@ -96,18 +96,19 @@ for n = 1:length(time1)
     mpc.dv(1,:) = optVar(13:nVarsPerIter:end);
     
     % update simulation model states using ode45
-    car.updateOneTrack(Ts,mpc.delta(1),mpc.F_long(1));
+    %car.updateOneTrack(Ts,mpc.delta(1),mpc.F_long(1));
+    car.updateOneTrackLinear(Ts,5*pi/180,0);
     
     vtot = norm([car.vx,car.vy]);
     
     if n > 1
         children = get(gca, 'children');
-        delete(children(1));
-        delete(children(2));
+        %delete(children(1));
+        %delete(children(2));
     end
 	car.plotCar();
-    plot(mpc.States(1,:), mpc.States(2,:), 'b.-')
-    axis([100 150 -5 30])
+    %plot(mpc.States(1,:), mpc.States(2,:), 'b.-')
+    %axis([100 150 -5 30])
     title(['velocity = ', num2str(vtot)]);
     drawnow();
 
