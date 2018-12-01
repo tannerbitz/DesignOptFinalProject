@@ -1,7 +1,7 @@
 close all; clear all;
 
 endTime = 20;
-Ts = .05;
+Ts = .01;
 N = 40;      % horizon length
 inputFile = 'track1.txt';
 width = 12;
@@ -19,7 +19,7 @@ Y0 = rt.Y(1);
 car = car1();  
 car.X = X0;
 car.Y = Y0;
-car.vx = 10;
+car.vx = 15;
 
 % initalize Model Pridictive Controller
 mpc = MPC(Ts,N,car);
@@ -55,7 +55,6 @@ for n = 1:length(time1)
     [theta1,X1,Y1,lapCount] = rt.getXY(theta1,lapCount);
     [ax,bx,cx,dx,ay,by,cy,dy] = rt.getCubicPolynomial(theta1,X1,Y1);
     
-
     %linearize dynamics model 
     mpc.linearizeModel(car)
    
@@ -75,9 +74,6 @@ for n = 1:length(time1)
     % solve optimization problem to yield inputs [delta, Flong]
     [Aeq, Beq] = mpc.getEqualityCons();
     [G,H] = mpc.getCostMatrices(ax, ay, bx, by, cx, cy, dx, dy);
-    
-   lb(8) = max(delta_old - 5*pi/180,car.delta_min);
-    ub(8) = min(delta_old + 5*pi/180,car.delta_max);  
     
     optVar = quadprog(H,G,[],[],Aeq,Beq,lb,ub);
     
@@ -141,8 +137,7 @@ for n = 1:length(time1)
     mpc.setLinPoints(States);
     
 end
-figure
-plot([phi_hist, mpc.States(3,:)]*180/pi)
+
 % %%
 % %close all 
 % figure

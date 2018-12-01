@@ -32,7 +32,7 @@ classdef MPC < handle
             
             
             % set initial optimization variables
-            obj.thetaA      = linspace(0,5,N);
+            obj.thetaA      = (car.vx+1)*Ts*linspace(0,N,N);
             obj.States      = zeros(6,N); %[car.X, car.Y, car.phi, car.vx, car.vy, car.omegaB]';
             obj.States(1,:) = car.X;
             obj.States(2,:) = car.Y;
@@ -65,8 +65,7 @@ classdef MPC < handle
                 obj.States(:,i) = obj.States(:,i+1);
             end
 
-            obj.States(:,N1) = obj.A(:,:,N1)*obj.States(:,N1) + obj.B(:,:,N1)*U;
-
+            obj.States(:,N1) = obj.States(:,N1) + obj.Ts*(obj.A(:,:,N1)*(obj.States(:,N1)-StatesN1_old) + obj.B(:,:,N1)*(U-UN1_old) + obj.f);
 
             % shift optimization vars by one sampling period to use as
             % linearization points and inital guess in fmincon
@@ -165,10 +164,10 @@ classdef MPC < handle
             G = zeros(obj.nVarsPerIter*obj.N,1);
             
             % set weights cost functions terms
-            qc = 10;
+            qc = 100;
             ql = 100;
             gamma = 10;
-            rdelta = 100;
+            rdelta = 10;
             rF_long = 1;
             rv = 10;
             
