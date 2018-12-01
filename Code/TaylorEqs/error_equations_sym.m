@@ -66,10 +66,8 @@ dec = [decdX, decdY, decdtheta];
 
 deltaX = [X-X0; Y-Y0; theta-theta0];
 
-el2 = ql*(2*el0*del*deltaX + (del*deltaX)^2);
-ec2  = qc*(2*ec0*dec*deltaX + (dec*deltaX)^2);
-
-
+el2 = ql*(el0 + del*deltaX)^2;
+ec2 =  qc*(ec0 + dec*deltaX)^2;
 
 f = el2 + ec2 - gamma*v*Ts ;
 Df = gradient(f,optVar);

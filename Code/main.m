@@ -1,7 +1,7 @@
 close all; clear all;
 
-endTime = 20;
-Ts = .02;
+endTime = 1;
+Ts = .05;
 N = 40;      % horizon length
 inputFile = 'track1.txt';
 width = 12;
@@ -46,7 +46,7 @@ lapCount = 0;
 
 delta_old = 0;
 
-for n = 1:4 %length(time1)
+for n = 1:length(time1)
     t = time1(n);
     
     % calculate cubic approximation to track over the the prediction
@@ -77,8 +77,6 @@ for n = 1:4 %length(time1)
     
     optVar = quadprog(H,G,[],[],Aeq,Beq,lb,ub);
     
-    delta_old = optVar(8);
-    
     % update variable vectors
     mpc.thetaA(1,:) = optVar(1:nVarsPerIter:end) ;
     for i = 1:N
@@ -94,27 +92,23 @@ for n = 1:4 %length(time1)
     % update simulation model states using ode45
     car.updateOneTrack(Ts,mpc.delta(1),mpc.F_long(1));
     
-    
     vtot = norm([car.vx,car.vy]);
     
     if n > 1
         children = get(gca, 'children');
-        delete(children(1));
-        delete(children(2));
-        delete(children(3));
-        delete(children(4));
+%         delete(children(1));
+%         delete(children(2));
+%         delete(children(3));
+%         delete(children(4));
         
     end
     
-    [~, xtheta, ytheta, ~] = rt.getXY(mpc.thetaA, 1);
-    
+    [~, xtheta, ytheta, ~] = rt.getXY(mpc.thetaA, 1); 
     car.plotCar();
-    
     plot(xtheta, ytheta, 'r*')
     plot(mpc.States(1,:), mpc.States(2,:), 'b.-')
     axis([100 150 -5 30])
-    title(['velocity = ', num2str(vtot)]);
-    
+    title(['velocity = ', num2str(vtot)]);   
     
     
     % save history of states
@@ -128,8 +122,7 @@ for n = 1:4 %length(time1)
     delta_hist  = [delta_hist mpc.delta(1)];
     thetaA_hist = [thetaA_hist, mpc.thetaA(1)];
     v_hist = [v_hist, mpc.v(1)];
-    slipflag_hist = [slipflag_hist, mpc.slipflag];
-    
+    slipflag_hist = [slipflag_hist, mpc.slipflag];  
     Fx_hist = [Fx_hist car.Fx];
     Fy_hist = [Fy_hist car.Fy];
     

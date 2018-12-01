@@ -74,7 +74,7 @@ classdef MPC < handle
                 obj.States(:,i) = obj.States(:,i+1);
             end
 
-            obj.States(:,N1) = obj.States(:,N1) + obj.Ts*( obj.f(:,N1));% + obj.A(:,:,N1)*(obj.States(:,N1)-obj.StatesN) + obj.B(:,:,N1)*(U-UN) );
+            obj.States(:,N1) = obj.States(:,N1) + obj.Ts*( obj.f(:,N1)+ obj.A(:,:,N1)*(obj.States(:,N1)-obj.StatesN) + obj.B(:,:,N1)*(U-UN) );
 
             % shift optimization vars by one sampling period to use as
             % linearization points and inital guess in fmincon
@@ -132,7 +132,7 @@ classdef MPC < handle
                     vx = 1; % 1e-8;
                 end
                 if abs(vy) < 10^-8
-                    vy = 10^-8;
+                    vy = -10^-8;
                 end
                 
                 if (abs(alphaf) < alphaFMax  && abs(alphar) < alphaRMax) % front grip, rear grip
@@ -177,8 +177,8 @@ classdef MPC < handle
             G = zeros(obj.nVarsPerIter*obj.N,1);
             
             % set weights cost functions terms
-            qc = 100;
-            ql = 10;
+            qc = 1;
+            ql = 1;
             gamma = 1;
             rdelta = 1;
             rF_long = 1;
