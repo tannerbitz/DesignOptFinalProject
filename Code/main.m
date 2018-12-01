@@ -1,7 +1,7 @@
 close all; clear all;
 
-endTime = 1;
-Ts = .05;
+endTime = 100;
+Ts = .025;
 N = 40;      % horizon length
 inputFile = 'track1.txt';
 width = 12;
@@ -19,7 +19,7 @@ Y0 = rt.Y(1);
 car = car1();
 car.X = X0;
 car.Y = Y0;
-car.vx = 10;
+car.vx = 5;
 
 % initalize Model Pridictive Controller
 mpc = MPC(Ts,N,car);
@@ -73,10 +73,13 @@ for n = 1:length(time1)
     
     % solve optimization problem to yield inputs [delta, Flong]
     [Aeq, Beq] = mpc.getEqualityCons();
-    [G,H] = mpc.getCostMatrices(ax, ay, bx, by, cx, cy, dx, dy);
+%     [G,H] = mpc.getCostMatrices(ax, ay, bx, by, cx, cy, dx, dy);
     
-    optVar = quadprog(H,G,[],[],Aeq,Beq,lb,ub);
-    
+%     optVar = quadprog(H,G,[],[],Aeq,Beq,lb,ub);
+    optVar = fmincon(@(optVar) mpc.getNonlinCost(optVar, ax, ay, bx, by, cx, cy, dx, dy), ...
+                     optVar, [],[],Aeq, Beq, lb, ub);
+
+
     % update variable vectors
     mpc.thetaA(1,:) = optVar(1:nVarsPerIter:end) ;
     for i = 1:N
@@ -96,18 +99,22 @@ for n = 1:length(time1)
     
     if n > 1
         children = get(gca, 'children');
-%         delete(children(1));
-%         delete(children(2));
-%         delete(children(3));
-%         delete(children(4));
+        delete(children(1));
+        delete(children(2));
+        delete(children(3));
+        delete(children(4));
+        delete(children(5));
+        delete(children(6));
+%         delete(children(7));
+%         delete(children(8));
         
     end
     
     [~, xtheta, ytheta, ~] = rt.getXY(mpc.thetaA, 1); 
-    car.plotCar();
-    plot(xtheta, ytheta, 'r*')
+    car.plotCar(mpc.delta(1));
+%     plot(xtheta, ytheta, 'r*')
     plot(mpc.States(1,:), mpc.States(2,:), 'b.-')
-    axis([100 150 -5 30])
+%     axis([100 150 -5 30])
     title(['velocity = ', num2str(vtot)]);   
     
     
@@ -130,7 +137,7 @@ for n = 1:length(time1)
     States = [car.X,car.Y, car.phi,car.vx,car.vy,car.omegaB];
     mpc.setLinPoints(States);
     
-    plot(mpc.States(1,:), mpc.States(2,:), 'g.-')
+%     plot(mpc.States(1,:), mpc.States(2,:), 'g.-')
     drawnow();
 end
 

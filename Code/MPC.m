@@ -204,6 +204,39 @@ classdef MPC < handle
         end
         
         
+        function cost = getNonlinCost(obj, optVar, ax, ay, bx, by, cx, cy, dx, dy)
+            
+            % weights
+            qc = 100;
+            ql = 100;
+            gamma = 1;
+            rdelta = 100;
+            rF_long = 1;
+            rv = 1;
+            
+            N1 = obj.N;
+            cost = 0; 
+            for i = 1:N1
+                theta_i = optVar(1+obj.nVarsPerIter*(i-1));
+                X_i = optVar(2+obj.nVarsPerIter*(i-1));
+                Y_i = optVar(3+obj.nVarsPerIter*(i-1));
+                v_i = optVar(10+obj.nVarsPerIter*(i-1));
+                ddelta_i = optVar(11+obj.nVarsPerIter*(i-1));
+                dFlong_i = optVar(12+obj.nVarsPerIter*(i-1));
+                dv_i = optVar(13+obj.nVarsPerIter*(i-1));
+                
+                
+                el_i = getEl(X_i, Y_i, ax, ay, bx, by, cx, cy, dx, dy, theta_i);
+                ec_i = getEc(X_i, Y_i, ax, ay, bx, by, cx, cy, dx, dy, theta_i);
+                
+                cost = cost + qc*ec_i^2 + ql*el_i^2 + rdelta*ddelta_i^2 ...
+                      + rF_long*dFlong_i^2 + rv*dv_i^2 - gamma*obj.Ts*v_i;
+            end
+            
+        end
+        
+        
+        
         function [Aeq, Beq] = getEqualityCons(obj)
             nVarsPerIter = 13;
             nVars = nVarsPerIter*obj.N;

@@ -212,7 +212,7 @@ classdef SimModel < handle
         end
 
 
-        function [] = plotCar(obj)
+        function [] = plotCar(obj, delta)
             deltax1 = [obj.length/2, -obj.length/2, -obj.length/2, obj.length/2, obj.length/2+obj.length/4];
             deltay1 = [obj.width/2, obj.width/2, -obj.width/2, -obj.width/2, 0];
 
@@ -221,8 +221,40 @@ classdef SimModel < handle
 
             x = obj.X + deltax;
             y = obj.Y + deltay;
-
+            
+            tirelength = 1;
+            
+            %Tire Coordinates
+            fl_fx = x(1) + tirelength/2*cos(obj.phi + delta);
+            fl_fy = y(1) + tirelength/2*sin(obj.phi + delta);
+            fl_rx = x(1) - tirelength/2*cos(obj.phi + delta);
+            fl_ry = y(1) - tirelength/2*sin(obj.phi + delta);
+            
+            
+            fr_fx = x(4) + tirelength/2*cos(obj.phi + delta);
+            fr_fy = y(4) + tirelength/2*sin(obj.phi + delta);
+            fr_rx = x(4) - tirelength/2*cos(obj.phi + delta);
+            fr_ry = y(4) - tirelength/2*sin(obj.phi + delta);
+            
+            
+            rl_fx = x(2) + tirelength/2*cos(obj.phi);
+            rl_fy = y(2) + tirelength/2*sin(obj.phi);
+            rl_rx = x(2) - tirelength/2*cos(obj.phi);
+            rl_ry = y(2) - tirelength/2*sin(obj.phi);
+            
+            
+            rr_fx = x(3) + tirelength/2*cos(obj.phi);
+            rr_fy = y(3) + tirelength/2*sin(obj.phi);
+            rr_rx = x(3) - tirelength/2*cos(obj.phi);
+            rr_ry = y(3) - tirelength/2*sin(obj.phi);
+            
+            % Plot
             patch(x,y,sqrt(obj.vx^2 + obj.vy^2))
+            plot([fl_fx, fl_rx], [fl_fy, fl_ry], 'k', 'LineWidth', 2.5) %front left tire
+            plot([fr_fx, fr_rx], [fr_fy, fr_ry], 'k', 'LineWidth', 2.5) %front right tire
+            plot([rl_fx, rl_rx], [rl_fy, rl_ry], 'k', 'LineWidth', 2.5) %rear left tire
+            plot([rr_fx, rr_rx], [rr_fy, rr_ry], 'k', 'LineWidth', 2.5) %rear right tire
+            
             colormap(jet)
         end
 
