@@ -1,8 +1,8 @@
 syms X Y vx vy varphi omegaB theta delta lf lr R mu Fz_f Fz_r Flong m Iz C
 
 eps = 10^-8;
-alphaf = atan((vy + lr*omegaB)/(vx+eps)) - delta;
-alphar = atan((vy - lf*omegaB)/(vx+eps)) ;
+alphaf = atan((vy + lf*omegaB)/(vx+eps)) - delta;
+alphar = atan((vy - lr*omegaB)/(vx+eps)) ;
 
 falphaf = C*tan(alphaf);
 falphar = C*tan(alphar);
@@ -15,8 +15,8 @@ Flat_r = -falphar + (2 - R)/(3*mu*Fz_r)*sqrt(falphar.^2)*falphar - (1 - 2/3*R)/(
 Xdot = vx*cos(varphi) - vy*sin(varphi);
 Ydot = vx*sin(varphi) + vy*cos(varphi);
 varphidot = omegaB;
-vxdot = 1/m*(Flong - Flat_f*sin(delta) + Flong*cos(delta)); % + m*vy*omegaB);
-vydot = 1/m*(Flat_r + Flat_f*cos(delta) + Flong*sin(delta)); % - m*vx*omegaB);
+vxdot = 1/m*(Flong - Flat_f*sin(delta) + Flong*cos(delta) + m*vy*omegaB);
+vydot = 1/m*(Flat_r + Flat_f*cos(delta) + Flong*sin(delta) - m*vx*omegaB);
 omegaBdot = 1/Iz*(Flat_f*lf*cos(delta) + Flong*sin(delta)*lf - Flat_r*lr);
 
 
@@ -51,8 +51,8 @@ Flat_r = -falphar + (2 - R)/(3*mu*Fz_r)*sqrt(falphar.^2)*falphar - (1 - 2/3*R)/(
 Xdot = vx*cos(varphi) - vy*sin(varphi);
 Ydot = vx*sin(varphi) + vy*cos(varphi);
 varphidot = omegaB;
-vxdot = 1/m*(Flong - Flat_f*sin(delta) + Flong*cos(delta)); % + m*vy*omegaB);
-vydot = 1/m*(Flat_r + Flat_f*cos(delta) + Flong*sin(delta)); % - m*vx*omegaB);
+vxdot = 1/m*(Flong - Flat_f*sin(delta) + Flong*cos(delta) + m*vy*omegaB);
+vydot = 1/m*(Flat_r + Flat_f*cos(delta) + Flong*sin(delta) - m*vx*omegaB);
 omegaBdot = 1/Iz*(Flat_f*lf*cos(delta) + Flong*sin(delta)*lf - Flat_r*lr);
 
 
@@ -85,8 +85,8 @@ Flat_r = -sign(alphar)*mu*R*Fz_r;
 Xdot = vx*cos(varphi) - vy*sin(varphi);
 Ydot = vx*sin(varphi) + vy*cos(varphi);
 varphidot = omegaB;
-vxdot = 1/m*(Flong - Flat_f*sin(delta) + Flong*cos(delta)); % + m*vy*omegaB);
-vydot = 1/m*(Flat_r + Flat_f*cos(delta) + Flong*sin(delta)); % - m*vx*omegaB);
+vxdot = 1/m*(Flong - Flat_f*sin(delta) + Flong*cos(delta) + m*vy*omegaB);
+vydot = 1/m*(Flat_r + Flat_f*cos(delta) + Flong*sin(delta) - m*vx*omegaB);
 omegaBdot = 1/Iz*(Flat_f*lf*cos(delta) + Flong*sin(delta)*lf - Flat_r*lr);
 
 
@@ -121,8 +121,8 @@ Flat_r = -sign(alphar)*mu*R*Fz_r;
 Xdot = vx*cos(varphi) - vy*sin(varphi);
 Ydot = vx*sin(varphi) + vy*cos(varphi);
 varphidot = omegaB;
-vxdot = 1/m*(Flong - Flat_f*sin(delta) + Flong*cos(delta)); % + m*vy*omegaB);
-vydot = 1/m*(Flat_r + Flat_f*cos(delta) + Flong*sin(delta)); % - m*vx*omegaB);
+vxdot = 1/m*(Flong - Flat_f*sin(delta) + Flong*cos(delta)+ m*vy*omegaB);
+vydot = 1/m*(Flat_r + Flat_f*cos(delta) + Flong*sin(delta) - m*vx*omegaB);
 omegaBdot = 1/Iz*(Flat_f*lf*cos(delta) + Flong*sin(delta)*lf - Flat_r*lr);
 
 
