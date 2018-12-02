@@ -2,7 +2,7 @@ close all; clear all;
 
 endTime = 150;
 Ts = .1;
-N = 30;      % horizon length
+N = 40;      % horizon length
 inputFile = 'track1.txt';
 width = 12;
 nVarsPerIter = 13;
@@ -47,6 +47,14 @@ lapCount = 0;
 delta1 = mpc.delta(1);
 F_long1 = mpc.F_long(1);
 v1 = mpc.v(1);
+
+Tsstr = num2str(Ts);
+Tsstr = strrep(Tsstr, '.', 'p');
+vidname = sprintf('Ts%s_N%i.avi', Tsstr, N);
+
+vid = VideoWriter(vidname);
+open(vid);
+
 
 for n = 1:length(time1)
     t = time1(n);
@@ -121,6 +129,7 @@ for n = 1:length(time1)
     %     axis([100 150 -5 30])
     title(['velocity = ', num2str(vtot), '    time = ', num2str(t)]);
     
+
     
     % save history of states
     X_hist = [X_hist car.X];
@@ -147,7 +156,13 @@ for n = 1:length(time1)
     
     %     plot(mpc.States(1,:), mpc.States(2,:), 'g.-')
     drawnow();
+    
+    frame = getframe(gcf);
+    writeVideo(vid,frame);
+    
 end
+
+close(vid);
 
 % %%
 % %close all
